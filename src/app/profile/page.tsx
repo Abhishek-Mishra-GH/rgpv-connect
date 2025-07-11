@@ -5,7 +5,8 @@ import type { UserProfile } from "@/types";
 import { Suspense } from "react";
 
 async function ProfileContent() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/profile`, { cache: 'no-store' });
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+  const res = await fetch(`${appUrl}/api/profile`, { cache: 'no-store' });
   if (!res.ok) {
      return <p className="text-destructive p-8 text-center">Failed to load profile.</p>;
   }

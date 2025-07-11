@@ -5,7 +5,8 @@ import type { UserProfile } from "@/types";
 import { Suspense } from "react";
 
 async function SeniorsList() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/seniors`, { cache: 'no-store' });
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+  const res = await fetch(`${appUrl}/api/seniors`, { cache: 'no-store' });
   if (!res.ok) {
     return <p className="text-destructive p-8 text-center">Failed to load seniors list.</p>;
   }
