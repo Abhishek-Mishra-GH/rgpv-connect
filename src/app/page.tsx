@@ -13,6 +13,37 @@ import {
 } from '@/components/ui/tabs';
 import { dummyQuestions } from '@/lib/data';
 import { QuestionCard } from '@/components/question-card';
+import { Suspense } from 'react';
+import { QuestionFeedSkeleton } from '@/components/question-feed-skeleton';
+
+async function LatestQuestions() {
+  // Simulate network latency
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  const questions = dummyQuestions;
+  return questions.map((question) => (
+    <QuestionCard key={question.id} question={question} />
+  ));
+}
+
+async function PopularQuestions() {
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  const questions = [...dummyQuestions].sort((a, b) => b.upvotes - a.upvotes);
+  return questions.map((question) => (
+    <QuestionCard key={question.id} question={question} />
+  ));
+}
+
+async function UnansweredQuestions() {
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  const questions = dummyQuestions.filter(q => q.answerCount === 0);
+  if (questions.length === 0) {
+    return <p className="text-muted-foreground p-8 text-center">No unanswered questions right now!</p>;
+  }
+  return questions.map((question) => (
+    <QuestionCard key={question.id} question={question} />
+  ));
+}
+
 
 export default function HomePage() {
   return (
@@ -33,9 +64,9 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {dummyQuestions.map((question) => (
-              <QuestionCard key={question.id} question={question} />
-            ))}
+            <Suspense fallback={<QuestionFeedSkeleton />}>
+              <LatestQuestions />
+            </Suspense>
           </CardContent>
         </Card>
       </TabsContent>
@@ -48,9 +79,9 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[...dummyQuestions].sort((a,b) => b.upvotes - a.upvotes).map((question) => (
-              <QuestionCard key={question.id} question={question} />
-            ))}
+             <Suspense fallback={<QuestionFeedSkeleton />}>
+              <PopularQuestions />
+            </Suspense>
           </CardContent>
         </Card>
       </TabsContent>
@@ -63,12 +94,9 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {dummyQuestions.filter(q => q.answerCount === 0).length > 0 
-              ? dummyQuestions.filter(q => q.answerCount === 0).map((question) => (
-                  <QuestionCard key={question.id} question={question} />
-                ))
-              : <p className="text-muted-foreground p-8 text-center">No unanswered questions right now!</p>
-            }
+            <Suspense fallback={<QuestionFeedSkeleton />}>
+              <UnansweredQuestions />
+            </Suspense>
           </CardContent>
         </Card>
       </TabsContent>
