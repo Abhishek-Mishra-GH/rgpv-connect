@@ -11,39 +11,27 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { dummyQuestions } from '@/lib/data';
 import { QuestionCard } from '@/components/question-card';
 import { Suspense } from 'react';
 import { QuestionFeedSkeleton } from '@/components/question-feed-skeleton';
+import type { Question } from '@/types';
 
-async function LatestQuestions() {
-  // Simulate network latency
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  const questions = dummyQuestions;
-  return questions.map((question) => (
-    <QuestionCard key={question.id} question={question} />
-  ));
-}
-
-async function PopularQuestions() {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  const questions = [...dummyQuestions].sort((a, b) => b.upvotes - a.upvotes);
-  return questions.map((question) => (
-    <QuestionCard key={question.id} question={question} />
-  ));
-}
-
-async function UnansweredQuestions() {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  const questions = dummyQuestions.filter(q => q.answerCount === 0);
+async function QuestionFeed({ filter }: { filter: 'latest' | 'popular' | 'unanswered' }) {
+  // We add a cache-busting parameter to the fetch call to ensure fresh data.
+  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/questions?tab=${filter}`, { cache: 'no-store' });
+  if (!res.ok) {
+    return <p className="text-destructive p-8 text-center">Failed to load questions.</p>;
+  }
+  const questions: Question[] = await res.json();
+  
   if (questions.length === 0) {
     return <p className="text-muted-foreground p-8 text-center">No unanswered questions right now!</p>;
   }
+  
   return questions.map((question) => (
     <QuestionCard key={question.id} question={question} />
   ));
 }
-
 
 export default function HomePage() {
   return (
@@ -65,7 +53,7 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Suspense fallback={<QuestionFeedSkeleton />}>
-              <LatestQuestions />
+              <QuestionFeed filter="latest" />
             </Suspense>
           </CardContent>
         </Card>
@@ -80,7 +68,7 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="space-y-4">
              <Suspense fallback={<QuestionFeedSkeleton />}>
-              <PopularQuestions />
+              <QuestionFeed filter="popular" />
             </Suspense>
           </CardContent>
         </Card>
@@ -95,7 +83,7 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Suspense fallback={<QuestionFeedSkeleton />}>
-              <UnansweredQuestions />
+              <QuestionFeed filter="unanswered" />
             </Suspense>
           </CardContent>
         </Card>

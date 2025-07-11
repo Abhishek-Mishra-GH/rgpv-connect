@@ -1,16 +1,19 @@
 import { SeniorCard } from "@/components/senior-card";
 import { SeniorsListSkeleton } from "@/components/seniors-list-skeleton";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { dummySeniors } from "@/lib/data";
+import type { UserProfile } from "@/types";
 import { Suspense } from "react";
 
 async function SeniorsList() {
-  // Simulate network latency
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/seniors`, { cache: 'no-store' });
+  if (!res.ok) {
+    return <p className="text-destructive p-8 text-center">Failed to load seniors list.</p>;
+  }
+  const seniors: UserProfile[] = await res.json();
   
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {dummySeniors.map(senior => (
+      {seniors.map(senior => (
         <SeniorCard key={senior.id} senior={senior} />
       ))}
     </div>

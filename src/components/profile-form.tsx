@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +18,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import type { UserProfile } from "@/types";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -27,25 +31,53 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
-// This can be used as a default value for the form
-const defaultValues: Partial<ProfileFormValues> = {
-  name: "Priya Singh", // Pre-filled from Google, but editable
-}
+type ProfileFormProps = {
+  userProfile: UserProfile;
+};
 
-export function ProfileForm() {
+export function ProfileForm({ userProfile }: ProfileFormProps) {
   const { toast } = useToast();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues,
+    defaultValues: {
+      name: userProfile.name || "",
+      course: userProfile.course || undefined,
+      branch: userProfile.branch || "",
+      year: userProfile.year || undefined,
+    },
     mode: "onChange",
   })
 
-  function onSubmit(data: ProfileFormValues) {
-    toast({
-      title: "Profile updated!",
-      description: "Your profile information has been saved.",
-    })
-    console.log(data);
+  async function onSubmit(data: ProfileFormValues) {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+
+      toast({
+        title: "Profile updated!",
+        description: "Your profile information has been saved.",
+      });
+      router.refresh();
+    } catch (error) {
+       toast({
+        title: "Error",
+        description: "Could not update your profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -116,7 +148,10 @@ export function ProfileForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">Update profile</Button>
+        <Button type="submit" disabled={isSubmitting}>
+           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Update profile
+        </Button>
       </form>
     </Form>
   )

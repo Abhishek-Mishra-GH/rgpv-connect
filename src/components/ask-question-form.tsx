@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -40,6 +41,8 @@ type AskQuestionFormValues = z.infer<typeof askQuestionFormSchema>;
 
 export function AskQuestionForm() {
   const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
   const { toast } = useToast();
   const form = useForm<AskQuestionFormValues>({
     resolver: zodResolver(askQuestionFormSchema),
@@ -77,13 +80,44 @@ export function AskQuestionForm() {
     }
   };
 
-  function onSubmit(data: AskQuestionFormValues) {
-    toast({
-      title: "Question Posted!",
-      description: "Your question is now live on the Q&A board.",
-    });
-    console.log(data);
-    form.reset({ title: '', body: '', tags: '', summary: '' });
+  async function onSubmit(data: AskQuestionFormValues) {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: data.title,
+          summary: data.summary || data.body.substring(0, 150),
+          body: data.body,
+          tags: data.tags.split(',').map(tag => tag.trim()),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to post question');
+      }
+
+      toast({
+        title: "Question Posted!",
+        description: "Your question is now live on the Q&A board.",
+      });
+      form.reset({ title: '', body: '', tags: '', summary: '' });
+      // Redirect to home page to see the new question
+      router.push('/');
+      router.refresh(); // Refresh server components
+    } catch (error) {
+      console.error("Failed to post question:", error);
+      toast({
+        title: "Error",
+        description: "Could not post your question. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -134,7 +168,7 @@ export function AskQuestionForm() {
                   variant="ghost"
                   size="sm"
                   onClick={handleSummarize}
-                  disabled={isSummarizing}
+                  disabled={isSummarizing || isSubmitting}
                 >
                   {isSummarizing ? (
                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -174,7 +208,8 @@ export function AskQuestionForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        <Button type="submit" disabled={isSubmitting}>
+           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Post Your Question
         </Button>
       </form>
