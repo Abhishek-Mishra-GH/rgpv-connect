@@ -2,31 +2,43 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users: Can only be read by anyone, but only created/updated by the user themselves.
+  
+    // Helper function to check vote increments
+    function isVote() {
+      return abs(request.resource.data.upvotes - resource.data.upvotes) == 1;
+    }
+  
     match /users/{userId} {
-      allow read;
-      allow create, update: if request.auth != null && request.auth.uid == userId;
+      // Allow anyone to read user profiles
+      allow read: if true;
+      
+      // Allow authenticated users to create their own profile
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow authenticated users to update their own profile
+      allow update: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Questions: Can be read by anyone. Can only be created by authenticated users.
-    // Can be upvoted by any authenticated user.
     match /questions/{questionId} {
-      allow read;
+      // Allow anyone to read questions
+      allow read: if true;
+      
+      // Allow authenticated users to create questions
       allow create: if request.auth != null;
-      allow update: if request.auth != null &&
-                      request.resource.data.upvotes == resource.data.upvotes + 1 &&
-                      request.resource.data.keys().hasOnly(['upvotes']);
-    }
 
-    // Answers: Can be read by anyone. Can only be created by authenticated users.
-    // Can be upvoted by any authenticated user.
+      // Allow authenticated users to update upvotes, or the author to edit other fields
+      allow update: if request.auth != null && (isVote() || request.auth.uid == resource.data.author.id);
+    }
+    
     match /answers/{answerId} {
-      allow read;
-      allow list: if true; // Allows querying the collection
+      // Allow anyone to read answers
+      allow read: if true;
+
+      // Allow authenticated users to create answers
       allow create: if request.auth != null;
-      allow update: if request.auth != null &&
-                      request.resource.data.upvotes == resource.data.upvotes + 1 &&
-                      request.resource.data.keys().hasOnly(['upvotes']);
+
+      // Allow authenticated users to update upvotes
+      allow update: if request.auth != null && isVote();
     }
   }
 }

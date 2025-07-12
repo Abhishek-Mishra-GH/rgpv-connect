@@ -4,24 +4,23 @@
 import { db } from '@/lib/firebase';
 import type { Question, UserProfile, Answer } from '@/types';
 import { collection, getDocs, query, orderBy, where, limit, QueryConstraint, getDoc, doc, increment, updateDoc } from 'firebase/firestore';
+import { revalidatePath } from 'next/cache';
 
 export async function getQuestions(filter: 'latest' | 'popular' | 'unanswered'): Promise<Question[]> {
   try {
     const questionsCol = collection(db, 'questions');
-    const constraints: QueryConstraint[] = [];
+    let constraints: QueryConstraint[];
 
     switch (filter) {
       case 'popular':
-        constraints.push(orderBy('upvotes', 'desc'));
+        constraints = [orderBy('upvotes', 'desc')];
         break;
       case 'unanswered':
-        // The index for this query needs to be created in Firestore.
-        // The error message in the logs will provide a direct link to create it.
-        constraints.push(where('answerCount', '==', 0), orderBy('createdAt', 'desc'));
+        constraints = [where('answerCount', '==', 0), orderBy('createdAt', 'desc')];
         break;
       case 'latest':
       default:
-        constraints.push(orderBy('createdAt', 'desc'));
+        constraints = [orderBy('createdAt', 'desc')];
         break;
     }
 
@@ -40,8 +39,6 @@ export async function getQuestions(filter: 'latest' | 'popular' | 'unanswered'):
     return questions;
   } catch (error) {
     console.error(`Error fetching questions with filter '${filter}':`, error);
-    // It's better to re-throw or handle it gracefully in the UI.
-    // For now, returning an empty array to avoid breaking the page.
     return [];
   }
 }
@@ -101,16 +98,34 @@ export async function getQuestionAndAnswers(questionId: string): Promise<{ quest
     }
 }
 
-export async function upvoteQuestion(questionId: string) {
+export async function upvoteQuestion(questionId: string, path: string) {
     const questionRef = doc(db, 'questions', questionId);
     await updateDoc(questionRef, {
         upvotes: increment(1)
     });
+    revalidatePath(path);
 }
 
-export async function upvoteAnswer(answerId: string) {
+export async function downvoteQuestion(questionId: string, path: string) {
+    const questionRef = doc(db, 'questions', questionId);
+    await updateDoc(questionRef, {
+        upvotes: increment(-1)
+    });
+    revalidatePath(path);
+}
+
+export async function upvoteAnswer(answerId: string, path: string) {
     const answerRef = doc(db, 'answers', answerId);
     await updateDoc(answerRef, {
         upvotes: increment(1)
     });
+    revalidatePath(path);
+}
+
+export async function downvoteAnswer(answerId: string, path: string) {
+    const answerRef = doc(db, 'answers', answerId);
+    await updateDoc(answerRef, {
+        upvotes: increment(-1)
+    });
+    revalidatePath(path);
 }

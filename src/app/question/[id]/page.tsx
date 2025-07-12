@@ -1,15 +1,15 @@
-import { getQuestionAndAnswers, upvoteQuestion, upvoteAnswer } from "@/lib/firestore-actions";
+import { getQuestionAndAnswers } from "@/lib/firestore-actions";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
-import { Bot } from "lucide-react";
+import { Bot, ArrowDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { AnswerForm } from "@/components/answer-form";
 import { VoteButton } from "@/components/vote-button";
-import { revalidatePath } from "next/cache";
+import { upvoteQuestion, downvoteQuestion, upvoteAnswer, downvoteAnswer } from "@/lib/firestore-actions";
 
 const getDisplayDate = (createdAt: Date | Timestamp): Date => {
     if (createdAt instanceof Date) {
@@ -25,18 +25,9 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
         notFound();
     }
 
-    const handleQuestionUpvote = async () => {
-        'use server';
-        await upvoteQuestion(params.id);
-        revalidatePath(`/question/${params.id}`);
-    }
-
-    const handleAnswerUpvote = async (answerId: string) => {
-        'use server';
-        await upvoteAnswer(answerId);
-        revalidatePath(`/question/${params.id}`);
-    }
-
+    const path = `/question/${params.id}`;
+    const handleQuestionUpvote = upvoteQuestion.bind(null, params.id, path);
+    const handleQuestionDownvote = downvoteQuestion.bind(null, params.id, path);
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -63,9 +54,12 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                         <p>{question.body}</p>
                     </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="gap-2">
                     <form action={handleQuestionUpvote}>
-                         <VoteButton voteCount={question.upvotes} />
+                         <VoteButton type="up" voteCount={question.upvotes} />
+                    </form>
+                    <form action={handleQuestionDownvote}>
+                         <VoteButton type="down" />
                     </form>
                 </CardFooter>
             </Card>
@@ -78,11 +72,12 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                         <CardContent className="p-0">
                             <div className="flex gap-4 p-6">
                                 <div className="flex flex-col items-center gap-1 text-muted-foreground w-12">
-                                     <form action={async () => {
-                                        'use server';
-                                        await handleAnswerUpvote(answer.id);
-                                     }}>
-                                        <VoteButton voteCount={answer.upvotes} />
+                                     <form action={upvoteAnswer.bind(null, answer.id, path)}>
+                                        <VoteButton type="up" />
+                                     </form>
+                                     <span className="text-base font-bold text-foreground">{answer.upvotes}</span>
+                                     <form action={downvoteAnswer.bind(null, answer.id, path)}>
+                                        <VoteButton type="down" />
                                     </form>
                                 </div>
                                 <div className="flex-1">

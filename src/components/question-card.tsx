@@ -7,6 +7,8 @@ import { ArrowUp, ArrowDown, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import type { Timestamp } from 'firebase/firestore';
+import { upvoteQuestion, downvoteQuestion } from '@/lib/firestore-actions';
+import { VoteButton } from './vote-button';
 
 type QuestionCardProps = {
   question: Question;
@@ -20,18 +22,22 @@ export function QuestionCard({ question }: QuestionCardProps) {
     return createdAt.toDate();
   }
 
+  const handleUpvote = upvoteQuestion.bind(null, question.id, '/');
+  const handleDownvote = downvoteQuestion.bind(null, question.id, '/');
+
+
   return (
     <Card className="hover:border-primary/50 transition-all duration-200">
       <CardContent className="p-4">
         <div className="flex gap-4">
           <div className="flex flex-col items-center gap-1 text-muted-foreground w-12">
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500 hover:text-green-600 hover:bg-green-500/10">
-              <ArrowUp className="h-5 w-5" />
-            </Button>
+            <form action={handleUpvote}>
+              <VoteButton type="up" />
+            </form>
             <span className="text-base font-bold text-foreground">{question.upvotes}</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-500/10">
-              <ArrowDown className="h-5 w-5" />
-            </Button>
+            <form action={handleDownvote}>
+                <VoteButton type="down" />
+            </form>
           </div>
           <div className="flex-1">
             <h3 className="font-headline text-lg font-semibold leading-tight">

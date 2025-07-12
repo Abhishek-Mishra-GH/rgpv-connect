@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import * as z from "zod"
 import { useRouter } from "next/navigation";
 import { doc, updateDoc } from "firebase/firestore";
@@ -23,6 +23,8 @@ import { useToast } from "@/hooks/use-toast"
 import type { UserProfile } from "@/types";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+
+const BTECH_BRANCHES = ["CSBS", "AIML", "CSDS", "CSE", "CE", "EC", "EX", "ME", "IT", "PCT", "AU"] as const;
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -48,10 +50,15 @@ export function ProfileForm({ userProfile }: ProfileFormProps) {
       name: userProfile.name || "",
       course: userProfile.course || undefined,
       branch: userProfile.branch || "",
-      year: userProfile.year || "",
+      year: userProfile.year || new Date().getFullYear() + 4,
     },
     mode: "onChange",
   })
+
+  const watchedCourse = useWatch({
+    control: form.control,
+    name: "course",
+  });
 
   async function onSubmit(data: ProfileFormValues) {
     setIsSubmitting(true);
@@ -105,7 +112,10 @@ export function ProfileForm({ userProfile }: ProfileFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Course</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={(value) => {
+                field.onChange(value)
+                form.setValue('branch', ''); // Reset branch on course change
+              }} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your course" />
@@ -123,25 +133,50 @@ export function ProfileForm({ userProfile }: ProfileFormProps) {
             </FormItem>
           )}
         />
-         <FormField
-          control={form.control}
-          name="branch"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Branch</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Computer Science & Engineering" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {watchedCourse === 'B.Tech' ? (
+          <FormField
+            control={form.control}
+            name="branch"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Branch</FormLabel>
+                 <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your B.Tech. branch" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {BTECH_BRANCHES.map(branch => (
+                        <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        ) : (
+          <FormField
+            control={form.control}
+            name="branch"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Branch / Specialization</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Computer Science & Engineering" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
          <FormField
           control={form.control}
           name="year"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Year of Study / Passout</FormLabel>
+              <FormLabel>Year of Passout</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="e.g., 2025" {...field} />
               </FormControl>
