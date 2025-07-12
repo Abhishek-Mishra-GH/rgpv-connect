@@ -2,43 +2,54 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Users can read their own profile, anyone can create one upon signup.
-    // Profiles can only be updated by their owner.
-    match /users/{userId} {
-      allow read;
-      allow create: if request.auth != null;
-      allow update: if request.auth.uid == userId;
+
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Anyone can read questions. Only authenticated users can create them.
-    // Voting is allowed by any authenticated user, changing only the 'upvotes' field.
-    // The author can update their own question.
-    match /questions/{questionId} {
-      allow read;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && (
-        // Case 1: The user is the author of the question
-        (resource.data.author.id == request.auth.uid) ||
-        // Case 2: The user is upvoting or downvoting
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes']) &&
-         (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1))
-      );
+    // Helper function to check that only specific fields have changed
+    function onlyTheseFieldsChanged(allowedFields) {
+      return request.resource.data.keys().removeAll(resource.data.keys()).size() == 0 &&
+             request.resource.data.keys().removeAll(allowedFields).size() == 0;
     }
-    
-    // Anyone can read answers. Only authenticated users can post answers.
-    // Voting is allowed by any authenticated user, changing only the 'upvotes' field.
-    // The author can update their own answer.
+
+    // USERS
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId;
+      // A user can create or update their own profile.
+      allow write: if request.auth.uid == userId;
+    }
+
+    // QUESTIONS
+    match /questions/{questionId} {
+      allow read: if true;
+      // Authenticated users can create questions.
+      allow create: if isAuthenticated();
+      
+      // An authenticated user can update a question ONLY to upvote or downvote.
+      // This rule ensures that:
+      // 1. Only the 'upvotes' field is being changed.
+      // 2. The user is logged in.
+      // 3. The upvote count changes by exactly +1 or -1.
+      allow update: if onlyTheseFieldsChanged(['upvotes', 'answerCount']) &&
+                     isAuthenticated() &&
+                     (request.resource.data.upvotes == resource.data.upvotes + 1 ||
+                      request.resource.data.upvotes == resource.data.upvotes - 1);
+    }
+
+    // ANSWERS
     match /answers/{answerId} {
-       allow read;
-       allow create: if request.auth != null;
-       allow update: if request.auth != null && (
-        // Case 1: The user is the author of the answer
-        (resource.data.author.id == request.auth.uid) ||
-        // Case 2: The user is upvoting or downvoting
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes']) &&
-         (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1))
-      );
+      allow read: if true;
+      
+      // Any authenticated user can create an answer.
+      allow create: if isAuthenticated();
+
+      // An authenticated user can update an answer ONLY to upvote or downvote.
+      allow update: if onlyTheseFieldsChanged(['upvotes']) &&
+                     isAuthenticated() &&
+                     (request.resource.data.upvotes == resource.data.upvotes + 1 ||
+                      request.resource.data.upvotes == resource.data.upvotes - 1);
     }
   }
 }
