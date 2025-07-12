@@ -52,6 +52,12 @@ export function AskQuestionForm() {
   const form = useForm<AskQuestionFormValues>({
     resolver: zodResolver(askQuestionFormSchema),
     mode: "onChange",
+    defaultValues: {
+        title: "",
+        body: "",
+        summary: "",
+        tags: "",
+    }
   });
 
   const handleSummarize = async () => {
@@ -214,7 +220,7 @@ export function AskQuestionForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || !user}>
            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Post Your Question
         </Button>
