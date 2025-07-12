@@ -1,13 +1,9 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import {
-  CircleUser,
-  Search,
-  LogOut,
-  LogIn
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import Link from "next/link";
+import { useState } from "react";
+import { CircleUser, Search, LogOut, LogIn, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,29 +11,38 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { useRouter } from 'next/navigation';
-import { useAuth } from './auth-provider';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+import { useAuth } from "./auth-provider";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 export function Header() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [loadingPath, setLoadingPath] = useState<string | null>(null);
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await signOut(auth);
-      toast({ title: 'Logged out successfully.' });
-      router.push('/login');
+      toast({ title: "Logged out successfully." });
+      router.push("/login");
     } catch (error) {
-      toast({ title: 'Logout failed', variant: 'destructive' });
+      toast({ title: "Logout failed", variant: "destructive" });
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
+  const handleNavClick = (href: string) => {
+    setLoadingPath(href);
+    setTimeout(() => setLoadingPath(null), 100);
+  };
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
@@ -54,36 +59,52 @@ export function Header() {
         </form>
       </div>
       <div className="hidden md:flex items-center">
-       {user ? (
-         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <CircleUser className="h-5 w-5" />
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/profile">Profile</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>Support</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        <Button asChild>
-            <Link href="/login">
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" className="rounded-full">
+                <CircleUser className="h-5 w-5" />
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/profile"
+                  onClick={() => handleNavClick("/profile")}
+                >
+                  {loadingPath === "/profile" ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut}>
+                {isLoggingOut ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="mr-2 h-4 w-4" />
+                )}
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button asChild>
+            <Link href="/login" onClick={() => handleNavClick("/login")}>
+              {loadingPath === "/login" ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
                 <LogIn className="mr-2 h-4 w-4" />
-                Login
+              )}
+              Login
             </Link>
-        </Button>
-      )}
+          </Button>
+        )}
       </div>
     </header>
   );

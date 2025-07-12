@@ -1,8 +1,9 @@
 import type { Question } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, ArrowRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import type { Timestamp } from "firebase/firestore";
@@ -75,20 +76,41 @@ export function QuestionCard({ question }: QuestionCardProps) {
                   </Badge>
                 ))}
               </div>
-              <div className="flex sm:hidden items-center gap-4">
-                <QuestionVoting
-                  questionId={question.id}
-                  upvoteCount={question.upvotes}
-                  layout="horizontal"
-                />
+
+              {/* Mobile layout */}
+              <div className="flex sm:hidden items-center gap-4 w-full justify-between">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <QuestionVoting
+                    questionId={question.id}
+                    upvoteCount={question.upvotes}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>{question.answerCount}</span>
+                  </div>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/question/${question.id}`}>
+                      See Answers
+                      <ArrowRight className="h-3 w-3 ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Desktop layout */}
+              <div className="hidden sm:flex items-center gap-3">
                 <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
                   <MessageSquare className="h-4 w-4" />
                   <span>{question.answerCount}</span>
                 </div>
-              </div>
-              <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground text-sm">
-                <MessageSquare className="h-4 w-4" />
-                <span>{question.answerCount}</span>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/question/${question.id}`}>
+                    See Answers
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>

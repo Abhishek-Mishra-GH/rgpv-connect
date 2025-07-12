@@ -1,16 +1,18 @@
-import type { Metadata } from 'next';
-import './globals.css';
+import type { Metadata } from "next";
+import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/header";
 import { MainSidebar } from "@/components/main-sidebar";
-import { MobileBottomNav } from '@/components/mobile-bottom-nav';
-import { Suspense } from 'react';
-import { NavigationLoader } from '@/components/navigation-loader';
-import { AuthProvider } from '@/components/auth-provider';
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { Suspense } from "react";
+import { NavigationLoader } from "@/components/navigation-loader";
+import { AuthProvider } from "@/components/auth-provider";
+import { FullPageLoader } from "@/components/full-page-loader";
 
 export const metadata: Metadata = {
-  title: 'RGPV Connect',
-  description: 'A community app for RGPV students to ask doubts and get guidance from seniors.',
+  title: "RGPV Connect",
+  description:
+    "A community app for RGPV students to ask doubts and get guidance from seniors.",
 };
 
 export default function RootLayout({
@@ -22,9 +24,19 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="font-body antialiased">
         <Suspense>
