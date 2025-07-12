@@ -4,11 +4,28 @@ import { ProfileForm } from "@/components/profile-form";
 import { ProfileFormSkeleton } from "@/components/profile-form-skeleton";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/components/auth-provider";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProfilePage() {
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: 'Logged out successfully.' });
+      router.push('/login');
+    } catch (error) {
+      toast({ title: 'Logout failed', variant: 'destructive' });
+    }
+  };
+
 
   // If user is not logged in, redirect them. This page is not public.
   if (!loading && !user) {
@@ -24,7 +41,13 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle>My Profile</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>My Profile</CardTitle>
+            <Button onClick={handleLogout} variant="ghost" size="sm" className="md:hidden">
+                <LogOut className="mr-2 h-4 w-4"/>
+                Logout
+            </Button>
+          </div>
           <CardDescription>
             {userProfile.isProfileComplete
               ? "View and manage your profile details." 
