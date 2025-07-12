@@ -6,6 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { summarizeQuestion } from "@/ai/flows/summarize-question";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "./auth-provider";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +47,8 @@ export function AskQuestionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { user, userProfile } = useAuth();
+
   const form = useForm<AskQuestionFormValues>({
     resolver: zodResolver(askQuestionFormSchema),
     mode: "onChange",
@@ -81,33 +86,34 @@ export function AskQuestionForm() {
   };
 
   async function onSubmit(data: AskQuestionFormValues) {
+    if (!user || !userProfile) {
+      toast({ title: "Please log in to post a question.", variant: "destructive" });
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/questions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      await addDoc(collection(db, "questions"), {
+        title: data.title,
+        body: data.body,
+        summary: data.summary || data.body.substring(0, 150),
+        tags: data.tags.split(',').map(tag => tag.trim()),
+        author: {
+          id: user.uid,
+          name: userProfile.name,
+          avatarUrl: userProfile.avatarUrl,
         },
-        body: JSON.stringify({
-          title: data.title,
-          summary: data.summary || data.body.substring(0, 150),
-          body: data.body,
-          tags: data.tags.split(',').map(tag => tag.trim()),
-        }),
+        createdAt: serverTimestamp(),
+        answerCount: 0,
+        upvotes: 0,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to post question');
-      }
 
       toast({
         title: "Question Posted!",
         description: "Your question is now live on the Q&A board.",
       });
       form.reset({ title: '', body: '', tags: '', summary: '' });
-      // Redirect to home page to see the new question
       router.push('/');
-      router.refresh(); // Refresh server components
+      router.refresh();
     } catch (error) {
       console.error("Failed to post question:", error);
       toast({

@@ -6,12 +6,20 @@ import { Button } from '@/components/ui/button';
 import { ArrowUp, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import type { Timestamp } from 'firebase/firestore';
 
 type QuestionCardProps = {
   question: Question;
 };
 
 export function QuestionCard({ question }: QuestionCardProps) {
+  const getCreatedAtDate = (createdAt: Date | Timestamp): Date => {
+    if (createdAt instanceof Date) {
+      return createdAt;
+    }
+    return createdAt.toDate();
+  }
+
   return (
     <Card className="p-4 hover:bg-muted/50 transition-colors">
       <div className="flex gap-4">
@@ -33,7 +41,7 @@ export function QuestionCard({ question }: QuestionCardProps) {
                 <AvatarFallback>{question.author.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <span className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">{question.author.name}</span> asked {formatDistanceToNow(question.createdAt, { addSuffix: true })}
+                <span className="font-medium text-foreground">{question.author.name}</span> asked {formatDistanceToNow(getCreatedAtDate(question.createdAt), { addSuffix: true })}
               </span>
             </div>
             <div className="flex items-center gap-4">

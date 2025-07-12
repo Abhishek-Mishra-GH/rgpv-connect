@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { useRouter } from "next/navigation";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 import { Button } from "@/components/ui/button"
 import {
@@ -54,21 +56,21 @@ export function ProfileForm({ userProfile }: ProfileFormProps) {
   async function onSubmit(data: ProfileFormValues) {
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      const userRef = doc(db, 'users', userProfile.id);
+      await updateDoc(userRef, {
+        ...data,
+        isProfileComplete: true,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
 
       toast({
         title: "Profile updated!",
         description: "Your profile information has been saved.",
       });
       router.refresh();
+      // If the user was completing their profile for the first time, redirect to home
+      if (!userProfile.isProfileComplete) {
+        router.push('/');
+      }
     } catch (error) {
        toast({
         title: "Error",

@@ -1,3 +1,5 @@
+import type { Timestamp } from "firebase/firestore";
+
 export type UserProfile = {
   id: string;
   name: string;
@@ -13,9 +15,10 @@ export type Question = {
   id: string;
   title: string;
   summary: string;
+  body: string;
   author: Pick<UserProfile, 'id' | 'name' | 'avatarUrl'>;
   tags: string[];
-  createdAt: Date;
+  createdAt: Date | Timestamp;
   answerCount: number;
   upvotes: number;
 };

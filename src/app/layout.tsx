@@ -6,6 +6,7 @@ import { MainSidebar } from "@/components/main-sidebar";
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 import { Suspense } from 'react';
 import { NavigationLoader } from '@/components/navigation-loader';
+import { AuthProvider } from '@/components/auth-provider';
 
 export const metadata: Metadata = {
   title: 'RGPV Connect',
@@ -29,17 +30,19 @@ export default function RootLayout({
         <Suspense>
           <NavigationLoader />
         </Suspense>
-        <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-          <MainSidebar />
-          <div className="flex flex-col">
-            <Header />
-            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background pb-24 md:pb-6">
-              {children}
-            </main>
+        <AuthProvider>
+          <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+            <MainSidebar />
+            <div className="flex flex-col">
+              <Header />
+              <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background pb-24 md:pb-6">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
-        <MobileBottomNav />
-        <Toaster />
+          <MobileBottomNav />
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

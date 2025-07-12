@@ -3,14 +3,14 @@ import { SeniorsListSkeleton } from "@/components/seniors-list-skeleton";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import type { UserProfile } from "@/types";
 import { Suspense } from "react";
+import { getSeniors } from "@/lib/firestore-actions";
 
 async function SeniorsList() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
-  const res = await fetch(`${appUrl}/api/seniors`, { cache: 'no-store' });
-  if (!res.ok) {
-    return <p className="text-destructive p-8 text-center">Failed to load seniors list.</p>;
+  const seniors: UserProfile[] = await getSeniors();
+  
+  if (seniors.length === 0) {
+    return <p className="text-muted-foreground p-8 text-center">No seniors found.</p>;
   }
-  const seniors: UserProfile[] = await res.json();
   
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

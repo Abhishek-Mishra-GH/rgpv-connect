@@ -4,21 +4,65 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import type { UserProfile } from '@/types';
 
 export function UserAuthForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    // Mock login process
-    setTimeout(() => {
-      // Here you would typically handle Firebase Google login.
-      // On success, you would check if the user profile is complete.
-      // If incomplete, redirect to '/profile'.
-      // If complete, redirect to '/'.
-      router.push('/');
-    }, 1500);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        // New user, create profile
+        const newUserProfile: UserProfile = {
+          id: user.uid,
+          name: user.displayName || 'New User',
+          email: user.email || '',
+          avatarUrl: user.photoURL || `https://placehold.co/100x100.png`,
+          course: null,
+          branch: null,
+          year: null,
+          isProfileComplete: false,
+        };
+        await setDoc(userRef, newUserProfile);
+        toast({ title: "Welcome!", description: "Please complete your profile." });
+        router.push('/profile');
+      } else {
+        // Existing user
+        const userProfile = userSnap.data() as UserProfile;
+        if (!userProfile.isProfileComplete) {
+          toast({ title: "Welcome back!", description: "Please complete your profile." });
+          router.push('/profile');
+        } else {
+          toast({ title: "Login successful!", description: "Welcome back to RGPV Connect." });
+          router.push('/');
+        }
+      }
+      router.refresh();
+
+    } catch (error) {
+      console.error("Google login error", error);
+      toast({
+        title: 'Login Failed',
+        description: 'Could not log in with Google. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {

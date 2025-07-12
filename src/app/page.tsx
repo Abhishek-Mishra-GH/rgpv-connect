@@ -14,19 +14,19 @@ import {
 import { QuestionCard } from '@/components/question-card';
 import { Suspense } from 'react';
 import { QuestionFeedSkeleton } from '@/components/question-feed-skeleton';
+import { getQuestions } from '@/lib/firestore-actions';
 import type { Question } from '@/types';
 
+
 async function QuestionFeed({ filter }: { filter: 'latest' | 'popular' | 'unanswered' }) {
-  // We add a cache-busting parameter to the fetch call to ensure fresh data.
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
-  const res = await fetch(`${appUrl}/api/questions?tab=${filter}`, { cache: 'no-store' });
-  if (!res.ok) {
-    return <p className="text-destructive p-8 text-center">Failed to load questions.</p>;
-  }
-  const questions: Question[] = await res.json();
+  const questions: Question[] = await getQuestions(filter);
   
   if (questions.length === 0) {
-    return <p className="text-muted-foreground p-8 text-center">No unanswered questions right now!</p>;
+     return <p className="text-muted-foreground p-8 text-center">
+      {filter === 'unanswered' 
+        ? "No unanswered questions right now!" 
+        : "No questions found."}
+    </p>;
   }
   
   return questions.map((question) => (
