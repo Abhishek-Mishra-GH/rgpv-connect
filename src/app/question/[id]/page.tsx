@@ -20,6 +20,27 @@ const getDisplayDate = (createdAt: Date | Timestamp): Date => {
     return createdAt.toDate();
 }
 
+function GeminiLogo(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 256 256"
+            {...props}
+        >
+            <path fill="#8E8FFA" d="M96 128a32 32 0 1 1-64 0 32 32 0 0 1 64 0" />
+            <path
+                fill="#8E8FFA"
+                d="m143.87 32.13l-47.74 82.69l47.74 82.69c42.2-24.36 42.2-141.02 0-165.38"
+            />
+            <path
+                fill="#4285F4"
+                d="M143.87 32.13c-42.2 24.36-42.2 141.02 0 165.38C101.67 221.87 32 181.67 32 128c0-53.67 69.67-93.87 111.87-63.74"
+                opacity="0.5"
+            />
+        </svg>
+    )
+}
+
 export default async function QuestionDetailPage({ params }: { params: { id: string } }) {
     const { question, answers } = await getQuestionAndAnswers(params.id);
 
@@ -76,10 +97,10 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                     {/* Mobile vote/answer count bar */}
                     <div className="md:hidden flex items-center justify-between mt-6 pt-4 border-t">
                         <div className="flex items-center gap-2">
-                            <form action={handleQuestionUpvote}>
+                             <form action={handleQuestionUpvote}>
                                 <VoteButton type="up" voteCount={question.upvotes} />
                             </form>
-                            <form action={handleQuestionDownvote}>
+                             <form action={handleQuestionDownvote}>
                                 <VoteButton type="down" />
                             </form>
                         </div>
@@ -106,41 +127,45 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
             <div className="space-y-6">
                 {aiAnswer && (
                      <Card key={aiAnswer.id} className="bg-card border-primary/30">
-                        <CardContent className="p-0">
-                            <div className="flex gap-4 p-6">
-                                <div className="flex flex-col items-center gap-1 text-muted-foreground w-12">
-                                     <form action={upvoteAnswer.bind(null, aiAnswer.id, path)}>
-                                        <VoteButton type="up" />
-                                     </form>
-                                     <span className="text-base font-bold text-foreground">{aiAnswer.upvotes}</span>
-                                     <form action={downvoteAnswer.bind(null, aiAnswer.id, path)}>
-                                        <VoteButton type="down" />
-                                    </form>
-                                </div>
-                                <div className="flex-1 overflow-hidden">
-                                    <Collapsible>
-                                        <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 line-clamp-3">
+                        <CardHeader className="p-4 border-b">
+                            <div className="flex items-center gap-2">
+                                <GeminiLogo className="h-5 w-5"/>
+                                <span className="font-semibold text-sm text-primary">AI Guide</span>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                             <div className="flex-1 overflow-hidden">
+                                <Collapsible>
+                                    <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 line-clamp-3">
+                                        <p>{aiAnswer.body}</p>
+                                    </div>
+                                    <CollapsibleContent className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 mt-4">
                                             <p>{aiAnswer.body}</p>
-                                        </div>
-                                        <CollapsibleContent className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 mt-4">
-                                             <p>{aiAnswer.body}</p>
-                                        </CollapsibleContent>
-                                        <CollapsibleTrigger asChild>
-                                             <Button variant="link" className="p-0 h-auto text-sm mt-2">
-                                                View full answer
-                                                <ChevronDown className="h-4 w-4 ml-1" />
-                                            </Button>
-                                        </CollapsibleTrigger>
-                                    </Collapsible>
-                                    <div className="flex items-center justify-end mt-4">
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <Avatar className="h-8 w-8 bg-primary/20 text-primary">
-                                                <Bot className="h-5 w-5" />
-                                            </Avatar>
-                                            <div>
-                                                <span className="font-medium text-foreground">{aiAnswer.author.name}</span>
-                                                <p>Generated {formatDistanceToNow(getDisplayDate(aiAnswer.createdAt), { addSuffix: true })}</p>
-                                            </div>
+                                    </CollapsibleContent>
+                                    <CollapsibleTrigger asChild>
+                                            <Button variant="link" className="p-0 h-auto text-sm mt-2">
+                                            View full answer
+                                            <ChevronDown className="h-4 w-4 ml-1" />
+                                        </Button>
+                                    </CollapsibleTrigger>
+                                </Collapsible>
+                                <div className="flex items-center justify-between mt-4">
+                                    <div className="flex items-center gap-2">
+                                        <form action={upvoteAnswer.bind(null, aiAnswer.id, path)}>
+                                            <VoteButton type="up" />
+                                        </form>
+                                        <span className="text-base font-bold text-foreground">{aiAnswer.upvotes}</span>
+                                        <form action={downvoteAnswer.bind(null, aiAnswer.id, path)}>
+                                            <VoteButton type="down" />
+                                        </form>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <Avatar className="h-8 w-8 bg-primary/20 text-primary">
+                                            <Bot className="h-5 w-5" />
+                                        </Avatar>
+                                        <div>
+                                            <span className="font-medium text-foreground">{aiAnswer.author.name}</span>
+                                            <p>Generated {formatDistanceToNow(getDisplayDate(aiAnswer.createdAt), { addSuffix: true })}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -151,31 +176,29 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
 
                 {userAnswers.map(answer => (
                     <Card key={answer.id}>
-                        <CardContent className="p-0">
-                            <div className="flex gap-4 p-6">
-                                <div className="flex flex-col items-center gap-1 text-muted-foreground w-12">
-                                     <form action={upvoteAnswer.bind(null, answer.id, path)}>
-                                        <VoteButton type="up" />
-                                     </form>
-                                     <span className="text-base font-bold text-foreground">{answer.upvotes}</span>
-                                     <form action={downvoteAnswer.bind(null, answer.id, path)}>
-                                        <VoteButton type="down" />
-                                    </form>
+                         <CardContent className="p-6">
+                            <div className="flex-1">
+                                <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90">
+                                    <p>{answer.body}</p>
                                 </div>
-                                <div className="flex-1">
-                                    <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90">
-                                        <p>{answer.body}</p>
+                                <div className="flex items-center justify-between mt-4">
+                                    <div className="flex items-center gap-2">
+                                        <form action={upvoteAnswer.bind(null, answer.id, path)}>
+                                            <VoteButton type="up" />
+                                        </form>
+                                        <span className="text-base font-bold text-foreground">{answer.upvotes}</span>
+                                        <form action={downvoteAnswer.bind(null, answer.id, path)}>
+                                            <VoteButton type="down" />
+                                        </form>
                                     </div>
-                                    <div className="flex items-center justify-end mt-4">
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <Avatar className="h-8 w-8">
-                                                <AvatarImage src={answer.author.avatarUrl} alt={answer.author.name} />
-                                                <AvatarFallback>{answer.author.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <span className="font-medium text-foreground">{answer.author.name}</span>
-                                                <p>Answered {formatDistanceToNow(getDisplayDate(answer.createdAt), { addSuffix: true })}</p>
-                                            </div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarImage src={answer.author.avatarUrl} alt={answer.author.name} />
+                                            <AvatarFallback>{answer.author.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <span className="font-medium text-foreground">{answer.author.name}</span>
+                                            <p>Answered {formatDistanceToNow(getDisplayDate(answer.createdAt), { addSuffix: true })}</p>
                                         </div>
                                     </div>
                                 </div>
