@@ -43,8 +43,8 @@ export default function ProfilePage() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>My Profile</CardTitle>
-            <Button onClick={handleLogout} variant="destructive" size="sm" className="md:hidden border border-destructive bg-transparent text-destructive hover:bg-destructive/10">
-                <LogOut className="mr-2 h-4 w-4"/>
+            <Button onClick={handleLogout} variant="destructive" size="sm" className="md:hidden border border-destructive bg-transparent text-destructive hover:bg-destructive/10 h-8 px-2 text-xs">
+                <LogOut className="mr-1.5 h-3 w-3"/>
                 Logout
             </Button>
           </div>
