@@ -1,28 +1,30 @@
-
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Users can read anyone's profile, but only write to their own.
-    match /users/{userId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Anyone can read questions.
-    // Only authenticated users can create, update (for votes), and delete their own questions.
+    
+    // Allow reading questions and user profiles by anyone
     match /questions/{questionId} {
-      allow read: if true;
+      allow read;
       allow create: if request.auth != null;
-      allow update: if request.auth != null;
+      // Allow authenticated users to upvote questions or increment answer count
+      allow update: if request.auth != null && 
+        (request.resource.data.upvotes == resource.data.upvotes + 1 ||
+         request.resource.data.answerCount == resource.data.answerCount + 1);
     }
-
-    // Anyone can list and read answers.
-    // Authenticated users can create and update (for votes) answers.
+    
+    match /users/{userId} {
+      allow read;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to create answers
+    // Allow anyone to read answers
     match /answers/{answerId} {
-      allow list, read: if true;
+      allow read, list;
       allow create: if request.auth != null;
-      allow update: if request.auth != null;
+      // Allow authenticated users to upvote answers
+      allow update: if request.auth != null && request.resource.data.upvotes == resource.data.upvotes + 1;
     }
   }
 }
