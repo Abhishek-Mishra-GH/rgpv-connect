@@ -1,44 +1,50 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check vote increments
-    function isVote() {
-      return abs(request.resource.data.upvotes - resource.data.upvotes) == 1;
-    }
-  
+
+    // Users:
+    // - Anyone can create their own user profile on signup.
+    // - Users can only read and update their own profile.
     match /users/{userId} {
-      // Allow anyone to read user profiles
       allow read: if true;
-      
-      // Allow authenticated users to create their own profile
       allow create: if request.auth != null && request.auth.uid == userId;
-      
-      // Allow authenticated users to update their own profile
       allow update: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Questions:
+    // - Anyone can read questions.
+    // - Authenticated users can create questions.
+    // - Only the author can update/delete their question, but anyone can vote.
     match /questions/{questionId} {
-      // Allow anyone to read questions
       allow read: if true;
-      
-      // Allow authenticated users to create questions
       allow create: if request.auth != null;
-
-      // Allow authenticated users to update upvotes, or the author to edit other fields
-      allow update: if request.auth != null && (isVote() || request.auth.uid == resource.data.author.id);
+      allow update: if request.auth != null && (
+        // Case 1: The user is the author, they can edit anything
+        (resource.data.author.id == request.auth.uid) ||
+        // Case 2: Any logged-in user can upvote or downvote
+        (request.resource.data.upvotes == resource.data.upvotes + 1 ||
+         request.resource.data.upvotes == resource.data.upvotes - 1)
+      );
+      allow delete: if request.auth != null && resource.data.author.id == request.auth.uid;
     }
-    
+
+    // Answers:
+    // - Answers can be read by anyone (as part of a question).
+    // - Authenticated users can create/post answers.
+    // - Only the author can update/delete their answer, but anyone can vote.
     match /answers/{answerId} {
-      // Allow anyone to read answers
-      allow read: if true;
-
-      // Allow authenticated users to create answers
+      allow read, list: if true;
       allow create: if request.auth != null;
-
-      // Allow authenticated users to update upvotes
-      allow update: if request.auth != null && isVote();
+      allow update: if request.auth != null && (
+        // Case 1: The user is the author, they can edit anything
+        (resource.data.author.id == request.auth.uid) ||
+        // Case 2: Any logged-in user can upvote or downvote
+        (request.resource.data.upvotes == resource.data.upvotes + 1 ||
+         request.resource.data.upvotes == resource.data.upvotes - 1)
+      );
+      allow delete: if request.auth != null && resource.data.author.id == request.auth.uid;
     }
   }
 }
