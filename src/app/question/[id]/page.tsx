@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
-import { Bot, ArrowDown } from "lucide-react";
+import { Bot } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { AnswerForm } from "@/components/answer-form";
 import { VoteButton } from "@/components/vote-button";
