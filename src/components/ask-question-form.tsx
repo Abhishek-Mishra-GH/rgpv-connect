@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { summarizeQuestion } from "@/ai/flows/summarize-question";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { answerQuestion } from "@/ai/flows/answer-question";
+import { addDoc, collection, serverTimestamp, writeBatch, doc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "./auth-provider";
 
@@ -23,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Wand2, Loader2 } from "lucide-react";
+import { Wand2, Loader2, Bot } from "lucide-react";
 
 const askQuestionFormSchema = z.object({
   title: z.string().min(15, {
@@ -98,7 +99,14 @@ export function AskQuestionForm() {
     }
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, "questions"), {
+      // Generate AI answer first
+      const aiResponse = await answerQuestion({ title: data.title, body: data.body });
+
+      const batch = writeBatch(db);
+
+      // 1. Create the question document
+      const questionRef = doc(collection(db, "questions"));
+      batch.set(questionRef, {
         title: data.title,
         body: data.body,
         summary: data.summary || data.body.substring(0, 150),
@@ -109,17 +117,34 @@ export function AskQuestionForm() {
           avatarUrl: userProfile.avatarUrl,
         },
         createdAt: serverTimestamp(),
-        answerCount: 0,
+        answerCount: 1, // Start with the AI answer
         upvotes: 0,
       });
+      
+      // 2. Create the AI answer document
+      const answerRef = doc(collection(db, "answers"));
+      batch.set(answerRef, {
+          questionId: questionRef.id,
+          body: aiResponse.answer,
+          author: {
+              id: 'ai-assistant',
+              name: 'AI Assistant',
+              avatarUrl: '',
+          },
+          createdAt: serverTimestamp(),
+          upvotes: 0,
+      });
+
+      await batch.commit();
 
       toast({
         title: "Question Posted!",
-        description: "Your question is now live on the Q&A board.",
+        description: "Your question is live and has an initial AI-generated answer.",
       });
       form.reset({ title: '', body: '', tags: '', summary: '' });
-      router.push('/');
+      router.push(`/question/${questionRef.id}`);
       router.refresh();
+
     } catch (error) {
       console.error("Failed to post question:", error);
       toast({

@@ -22,3 +22,12 @@ export type Question = {
   answerCount: number;
   upvotes: number;
 };
+
+export type Answer = {
+    id: string;
+    questionId: string;
+    body: string;
+    author: Pick<UserProfile, 'id' | 'name' | 'avatarUrl'>;
+    createdAt: Date | Timestamp;
+    upvotes: number;
+};
