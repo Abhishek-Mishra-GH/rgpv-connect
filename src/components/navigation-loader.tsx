@@ -1,36 +1,32 @@
+// src/components/navigation-loader.tsx
 'use client';
 
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import NProgress from 'nprogress';
 
 export function NavigationLoader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const previousPath = useRef(pathname + searchParams.toString());
 
   useEffect(() => {
     NProgress.configure({ showSpinner: false });
+  }, []);
 
-    const handleStart = () => NProgress.start();
-    const handleStop = () => NProgress.done();
+  useEffect(() => {
+    const currentPath = pathname + searchParams.toString();
+    if (previousPath.current !== currentPath) {
+      NProgress.start();
+    }
+    // The `previousPath.current` is updated in the cleanup function
+    // to ensure `NProgress.done()` is called for the *previous* navigation.
+    NProgress.done();
 
-    // We use the pathname and searchParams to detect when navigation is complete
-    handleStop();
-    
     return () => {
-      handleStop();
+      previousPath.current = currentPath;
     };
   }, [pathname, searchParams]);
-  
-  // This effect will run on mount and when navigation starts
-  useEffect(() => {
-      NProgress.start();
-      const timer = setTimeout(() => {
-          NProgress.done()
-      }, 500); // Failsafe to stop loader
-      return () => clearTimeout(timer);
-  }, [pathname, searchParams]);
-
 
   return null;
 }
