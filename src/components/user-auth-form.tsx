@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
-import type { UserProfile } from '@/types';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import type { UserProfile } from "@/types";
 
 export function UserAuthForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -21,16 +21,16 @@ export function UserAuthForm() {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      
-      const userRef = doc(db, 'users', user.uid);
+
+      const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
         // New user, create profile
         const newUserProfile: UserProfile = {
           id: user.uid,
-          name: user.displayName || 'New User',
-          email: user.email || '',
+          name: user.displayName || "New User",
+          email: user.email || "",
           avatarUrl: user.photoURL || `https://placehold.co/100x100.png`,
           course: null,
           branch: null,
@@ -38,27 +38,39 @@ export function UserAuthForm() {
           isProfileComplete: false,
         };
         await setDoc(userRef, newUserProfile);
-        toast({ title: "Welcome!", description: "Please complete your profile." });
-        router.push('/profile');
+        toast({
+          title: "Welcome!",
+          description: "Please complete your profile.",
+        });
+        router.push("/profile");
       } else {
         // Existing user
         const userProfile = userSnap.data() as UserProfile;
         if (!userProfile.isProfileComplete) {
-          toast({ title: "Welcome back!", description: "Please complete your profile." });
-          router.push('/profile');
+          toast({
+            title: "Welcome back!",
+            description: "Please complete your profile.",
+          });
+          router.push("/profile");
         } else {
-          toast({ title: "Login successful!", description: "Welcome back to RGPV Connect." });
-          router.push('/');
+          toast({
+            title: "Welcome back!",
+            description: "Login successful. Redirecting to home page...",
+          });
+
+          // Small delay to show the toast before redirecting
+          setTimeout(() => {
+            router.push("/");
+          }, 1000);
         }
       }
       router.refresh();
-
     } catch (error) {
       console.error("Google login error", error);
       toast({
-        title: 'Login Failed',
-        description: 'Could not log in with Google. Please try again.',
-        variant: 'destructive',
+        title: "Login Failed",
+        description: "Could not log in with Google. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -106,7 +118,7 @@ export function UserAuthForm() {
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
           <GoogleIcon className="mr-2" />
-        )}{' '}
+        )}{" "}
         Continue with Google
       </Button>
     </div>
