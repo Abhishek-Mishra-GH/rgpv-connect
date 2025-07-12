@@ -27,7 +27,7 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 // Allow anonymous users to browse these pages
-const publicRoutes = ['/login', '/', '/seniors'];
+const publicRoutes = ['/login', '/'];
 const isPublicRoute = (pathname: string) => {
     if (publicRoutes.includes(pathname)) return true;
     if (pathname.startsWith('/question/')) return true;

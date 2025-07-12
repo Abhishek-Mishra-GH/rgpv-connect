@@ -3,13 +3,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, PlusCircle, Users, User } from 'lucide-react';
+import { Home, PlusCircle, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Home' },
   { href: '/ask-question', icon: PlusCircle, label: 'Ask' },
-  { href: '/seniors', icon: Users, label: 'Seniors' },
   { href: '/profile', icon: User, label: 'Profile' },
 ];
 

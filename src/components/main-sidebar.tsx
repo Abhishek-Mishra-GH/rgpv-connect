@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import {
   Home,
   PlusCircle,
-  Users,
   User,
   LogIn,
 } from 'lucide-react';
@@ -18,7 +17,6 @@ import { useAuth } from './auth-provider';
 const navItems = [
   { href: '/', icon: Home, label: 'Home' },
   { href: '/ask-question', icon: PlusCircle, label: 'Ask a Question' },
-  { href: '/seniors', icon: Users, label: 'Seniors' },
   { href: '/profile', icon: User, label: 'Profile' },
 ];
 
