@@ -1,14 +1,15 @@
-import { getQuestionAndAnswers } from "@/lib/firestore-actions";
+import { getQuestionAndAnswers, upvoteQuestion, upvoteAnswer } from "@/lib/firestore-actions";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
-import { ThumbsUp, ThumbsDown, Bot } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bot } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { AnswerForm } from "@/components/answer-form";
+import { VoteButton } from "@/components/vote-button";
+import { revalidatePath } from "next/cache";
 
 const getDisplayDate = (createdAt: Date | Timestamp): Date => {
     if (createdAt instanceof Date) {
@@ -23,6 +24,19 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
     if (!question) {
         notFound();
     }
+
+    const handleQuestionUpvote = async () => {
+        'use server';
+        await upvoteQuestion(params.id);
+        revalidatePath(`/question/${params.id}`);
+    }
+
+    const handleAnswerUpvote = async (answerId: string) => {
+        'use server';
+        await upvoteAnswer(answerId);
+        revalidatePath(`/question/${params.id}`);
+    }
+
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -45,38 +59,41 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="prose dark:prose-invert max-w-none">
+                    <div className="prose dark:prose-invert max-w-none prose-p:text-foreground/90">
                         <p>{question.body}</p>
                     </div>
-
-                    <div className="flex items-center gap-2 mt-6">
-                        <Button variant="outline" size="sm"><ThumbsUp className="mr-2 h-4 w-4" /> Upvote ({question.upvotes})</Button>
-                        <Button variant="outline" size="sm"><ThumbsDown className="h-4 w-4" /></Button>
-                    </div>
                 </CardContent>
+                <CardFooter>
+                    <form action={handleQuestionUpvote}>
+                         <VoteButton voteCount={question.upvotes} />
+                    </form>
+                </CardFooter>
             </Card>
 
             <h2 className="text-2xl font-bold font-headline mt-8 mb-4">{answers.length} Answer{answers.length !== 1 && 's'}</h2>
             
             <div className="space-y-6">
                 {answers.map(answer => (
-                    <Card key={answer.id} className="bg-card">
-                        <CardContent className="p-6">
-                            <div className="flex gap-4">
-                                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8"><ThumbsUp className="h-5 w-5"/></Button>
-                                    <span className="font-bold text-lg">{answer.upvotes}</span>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8"><ThumbsDown className="h-5 w-5"/></Button>
+                    <Card key={answer.id} className={`bg-card ${answer.author.id === 'ai-assistant' ? 'border-primary/30' : ''}`}>
+                        <CardContent className="p-0">
+                            <div className="flex gap-4 p-6">
+                                <div className="flex flex-col items-center gap-1 text-muted-foreground w-12">
+                                     <form action={async () => {
+                                        'use server';
+                                        await handleAnswerUpvote(answer.id);
+                                     }}>
+                                        <VoteButton voteCount={answer.upvotes} />
+                                    </form>
                                 </div>
                                 <div className="flex-1">
-                                    <div className="prose dark:prose-invert max-w-none text-card-foreground">
+                                    <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90">
                                         <p>{answer.body}</p>
                                     </div>
-                                    <div className="flex items-center justify-between mt-6">
+                                    <div className="flex items-center justify-end mt-4">
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                             {answer.author.id === 'ai-assistant' ? (
                                                 <>
-                                                    <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
+                                                    <Avatar className="h-8 w-8 bg-primary/20 text-primary">
                                                         <Bot className="h-5 w-5" />
                                                     </Avatar>
                                                     <div>

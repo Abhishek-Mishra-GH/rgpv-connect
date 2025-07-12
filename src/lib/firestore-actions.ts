@@ -3,7 +3,7 @@
 
 import { db } from '@/lib/firebase';
 import type { Question, UserProfile, Answer } from '@/types';
-import { collection, getDocs, query, orderBy, where, limit, QueryConstraint, getDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where, limit, QueryConstraint, getDoc, doc, increment, updateDoc } from 'firebase/firestore';
 
 export async function getQuestions(filter: 'latest' | 'popular' | 'unanswered'): Promise<Question[]> {
   try {
@@ -15,6 +15,8 @@ export async function getQuestions(filter: 'latest' | 'popular' | 'unanswered'):
         constraints.push(orderBy('upvotes', 'desc'));
         break;
       case 'unanswered':
+        // The index for this query needs to be created in Firestore.
+        // The error message in the logs will provide a direct link to create it.
         constraints.push(where('answerCount', '==', 0), orderBy('createdAt', 'desc'));
         break;
       case 'latest':
@@ -38,6 +40,8 @@ export async function getQuestions(filter: 'latest' | 'popular' | 'unanswered'):
     return questions;
   } catch (error) {
     console.error(`Error fetching questions with filter '${filter}':`, error);
+    // It's better to re-throw or handle it gracefully in the UI.
+    // For now, returning an empty array to avoid breaking the page.
     return [];
   }
 }
@@ -77,7 +81,7 @@ export async function getQuestionAndAnswers(questionId: string): Promise<{ quest
         } as Question;
 
         const answersCol = collection(db, 'answers');
-        const q = query(answersCol, where('questionId', '==', questionId), orderBy('createdAt', 'asc'));
+        const q = query(answersCol, where('questionId', '==', questionId), orderBy('upvotes', 'desc'), orderBy('createdAt', 'asc'));
         const answersSnapshot = await getDocs(q);
 
         const answers = answersSnapshot.docs.map(doc => {
@@ -95,4 +99,18 @@ export async function getQuestionAndAnswers(questionId: string): Promise<{ quest
         console.error("Error fetching question and answers:", error);
         return { question: null, answers: [] };
     }
+}
+
+export async function upvoteQuestion(questionId: string) {
+    const questionRef = doc(db, 'questions', questionId);
+    await updateDoc(questionRef, {
+        upvotes: increment(1)
+    });
+}
+
+export async function upvoteAnswer(answerId: string) {
+    const answerRef = doc(db, 'answers', answerId);
+    await updateDoc(answerRef, {
+        upvotes: increment(1)
+    });
 }
