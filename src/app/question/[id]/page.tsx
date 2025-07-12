@@ -1,17 +1,17 @@
 import { getQuestionAndAnswers } from "@/lib/firestore-actions";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
-import { Bot, ChevronDown } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Bot, ChevronDown, MessageSquare } from "lucide-react";
 import { AnswerForm } from "@/components/answer-form";
 import { VoteButton } from "@/components/vote-button";
 import { upvoteQuestion, downvoteQuestion, upvoteAnswer, downvoteAnswer } from "@/lib/firestore-actions";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const getDisplayDate = (createdAt: Date | Timestamp): Date => {
     if (createdAt instanceof Date) {
@@ -36,40 +36,60 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
 
     return (
         <div className="max-w-4xl mx-auto">
-            <Card>
-                <CardHeader>
-                    <div className="flex gap-2 mb-2">
-                        {question.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-                    </div>
-                    <h1 className="text-3xl font-bold font-headline">{question.title}</h1>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                        <Avatar className="h-6 w-6">
-                            <AvatarImage src={question.author.avatarUrl} alt={question.author.name} />
-                            <AvatarFallback>{question.author.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span>
-                            Asked by <span className="font-medium text-foreground">{question.author.name}</span>
-                        </span>
-                        <span>&bull;</span>
-                        <span>{formatDistanceToNow(getDisplayDate(question.createdAt), { addSuffix: true })}</span>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="prose dark:prose-invert max-w-none prose-p:text-foreground/90">
-                        <p>{question.body}</p>
-                    </div>
-                </CardContent>
-                <CardFooter className="gap-2">
+            <div className="flex flex-col gap-2">
+                <div className="flex gap-2 mb-2">
+                    {question.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold font-headline">{question.title}</h1>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                    <Avatar className="h-6 w-6">
+                        <AvatarImage src={question.author.avatarUrl} alt={question.author.name} />
+                        <AvatarFallback>{question.author.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <span>
+                        Asked by <span className="font-medium text-foreground">{question.author.name}</span>
+                    </span>
+                    <span>&bull;</span>
+                    <span>{formatDistanceToNow(getDisplayDate(question.createdAt), { addSuffix: true })}</span>
+                </div>
+            </div>
+
+            <Separator className="my-6" />
+
+            <div className="flex flex-col md:flex-row gap-8">
+                 {/* Desktop vote buttons */}
+                <div className="hidden md:flex flex-col items-center gap-1 text-muted-foreground w-12">
+                    <form action={handleQuestionUpvote}>
+                        <VoteButton type="up" />
+                    </form>
+                    <span className="text-xl font-bold text-foreground">{question.upvotes}</span>
+                    <form action={handleQuestionDownvote}>
+                        <VoteButton type="down" />
+                    </form>
+                </div>
+                <div className="prose dark:prose-invert max-w-none prose-p:text-foreground/90 flex-1">
+                    <p>{question.body}</p>
+                </div>
+            </div>
+            
+            {/* Mobile vote/answer count bar */}
+            <div className="md:hidden flex items-center justify-between mt-6 p-2 border-t border-b">
+                 <div className="flex items-center gap-2">
                     <form action={handleQuestionUpvote}>
                          <VoteButton type="up" voteCount={question.upvotes} />
                     </form>
                     <form action={handleQuestionDownvote}>
                          <VoteButton type="down" />
                     </form>
-                </CardFooter>
-            </Card>
+                 </div>
+                 <div className="flex items-center gap-2 text-muted-foreground">
+                    <MessageSquare className="h-5 w-5" />
+                    <span className="font-medium">{answers.length} Answer{answers.length !== 1 && 's'}</span>
+                 </div>
+            </div>
 
-            <Card className="mt-6">
+
+            <Card className="mt-8">
                 <CardHeader>
                     <h3 className="text-xl font-bold font-headline">Your Answer</h3>
                 </CardHeader>
@@ -94,7 +114,7 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                                         <VoteButton type="down" />
                                     </form>
                                 </div>
-                                <div className="flex-1">
+                                <div className="flex-1 overflow-hidden">
                                     <Collapsible>
                                         <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 line-clamp-3">
                                             <p>{aiAnswer.body}</p>
