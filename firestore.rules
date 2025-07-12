@@ -2,29 +2,31 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Allow reading questions and user profiles by anyone
-    match /questions/{questionId} {
-      allow read;
-      allow create: if request.auth != null;
-      // Allow authenticated users to upvote questions or increment answer count
-      allow update: if request.auth != null && 
-        (request.resource.data.upvotes == resource.data.upvotes + 1 ||
-         request.resource.data.answerCount == resource.data.answerCount + 1);
-    }
-    
+    // Users: Can only be read by anyone, but only created/updated by the user themselves.
     match /users/{userId} {
       allow read;
       allow create, update: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Allow authenticated users to create answers
-    // Allow anyone to read answers
-    match /answers/{answerId} {
-      allow read, list;
+
+    // Questions: Can be read by anyone. Can only be created by authenticated users.
+    // Can be upvoted by any authenticated user.
+    match /questions/{questionId} {
+      allow read;
       allow create: if request.auth != null;
-      // Allow authenticated users to upvote answers
-      allow update: if request.auth != null && request.resource.data.upvotes == resource.data.upvotes + 1;
+      allow update: if request.auth != null &&
+                      request.resource.data.upvotes == resource.data.upvotes + 1 &&
+                      request.resource.data.keys().hasOnly(['upvotes']);
+    }
+
+    // Answers: Can be read by anyone. Can only be created by authenticated users.
+    // Can be upvoted by any authenticated user.
+    match /answers/{answerId} {
+      allow read;
+      allow list: if true; // Allows querying the collection
+      allow create: if request.auth != null;
+      allow update: if request.auth != null &&
+                      request.resource.data.upvotes == resource.data.upvotes + 1 &&
+                      request.resource.data.keys().hasOnly(['upvotes']);
     }
   }
 }
