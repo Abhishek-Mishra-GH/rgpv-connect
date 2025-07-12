@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/header";
 import { MainSidebar } from "@/components/main-sidebar";
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
+import { Suspense } from 'react';
+import { NavigationLoader } from '@/components/navigation-loader';
 
 export const metadata: Metadata = {
   title: 'RGPV Connect',
@@ -24,6 +26,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
+        <Suspense>
+          <NavigationLoader />
+        </Suspense>
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
           <MainSidebar />
           <div className="flex flex-col">
