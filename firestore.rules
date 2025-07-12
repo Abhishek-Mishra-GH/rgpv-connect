@@ -1,37 +1,44 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Users can read their own profile, and anyone can create one.
-    // Profiles can only be updated by the owner.
+    // Users can read their own profile, anyone can create one upon signup.
+    // Profiles can only be updated by their owner.
     match /users/{userId} {
-      allow read, get;
+      allow read;
       allow create: if request.auth != null;
       allow update: if request.auth.uid == userId;
     }
 
-    // Questions can be read by anyone.
-    // They can be created by any authenticated user.
-    // Upvotes can be incremented/decremented by 1, and no other fields can be changed.
+    // Anyone can read questions. Only authenticated users can create them.
+    // Voting is allowed by any authenticated user, changing only the 'upvotes' field.
+    // The author can update their own question.
     match /questions/{questionId} {
-      allow read, get, list;
+      allow read;
       allow create: if request.auth != null;
-      allow update: if request.auth != null
-                    && (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1)
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes']);
+      allow update: if request.auth != null && (
+        // Case 1: The user is the author of the question
+        (resource.data.author.id == request.auth.uid) ||
+        // Case 2: The user is upvoting or downvoting
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes']) &&
+         (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1))
+      );
     }
     
-    // Answers can be read by anyone.
-    // They can be created by any authenticated user.
-    // Upvotes can be incremented/decremented by 1, and no other fields can be changed.
+    // Anyone can read answers. Only authenticated users can post answers.
+    // Voting is allowed by any authenticated user, changing only the 'upvotes' field.
+    // The author can update their own answer.
     match /answers/{answerId} {
-      allow read, get, list;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null
-                    && (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1)
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes']);
+       allow read;
+       allow create: if request.auth != null;
+       allow update: if request.auth != null && (
+        // Case 1: The user is the author of the answer
+        (resource.data.author.id == request.auth.uid) ||
+        // Case 2: The user is upvoting or downvoting
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes']) &&
+         (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1))
+      );
     }
   }
 }
