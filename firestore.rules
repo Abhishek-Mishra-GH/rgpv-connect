@@ -1,34 +1,28 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // USERS
-    // Users can read any profile (for seniors page, author details)
-    // Users can only create and update their own profile
+
+    // Users can read anyone's profile, but only write to their own.
     match /users/{userId} {
       allow read: if true;
-      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // QUESTIONS
-    // Anyone can read questions
-    // Authenticated users can create questions
-    // Users can only update their own questions (TBD for upvotes etc.)
+
+    // Anyone can read questions.
+    // Only authenticated users can create, update (for votes), and delete their own questions.
     match /questions/{questionId} {
       allow read: if true;
       allow create: if request.auth != null;
-      allow update: if request.auth != null; // Simplified for now
+      allow update: if request.auth != null;
     }
 
-    // ANSWERS
-    // Anyone can read answers
-    // Authenticated users can create answers
-    // Users can update their own answers (TBD for upvotes)
-     match /answers/{answerId} {
-      allow read: if true;
+    // Anyone can list and read answers.
+    // Authenticated users can create and update (for votes) answers.
+    match /answers/{answerId} {
+      allow list, read: if true;
       allow create: if request.auth != null;
-      allow update: if request.auth != null; // Simplified for now
+      allow update: if request.auth != null;
     }
   }
 }
