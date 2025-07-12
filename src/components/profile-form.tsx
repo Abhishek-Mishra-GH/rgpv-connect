@@ -48,7 +48,7 @@ export function ProfileForm({ userProfile }: ProfileFormProps) {
       name: userProfile.name || "",
       course: userProfile.course || undefined,
       branch: userProfile.branch || "",
-      year: userProfile.year || undefined,
+      year: userProfile.year || "",
     },
     mode: "onChange",
   })
