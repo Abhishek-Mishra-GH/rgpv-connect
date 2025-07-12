@@ -37,9 +37,10 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>
 
 type ProfileFormProps = {
   userProfile: UserProfile;
+  onUpdate?: () => void;
 };
 
-export function ProfileForm({ userProfile }: ProfileFormProps) {
+export function ProfileForm({ userProfile, onUpdate }: ProfileFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,10 +74,15 @@ export function ProfileForm({ userProfile }: ProfileFormProps) {
         title: "Profile updated!",
         description: "Your profile information has been saved.",
       });
-      router.refresh();
-      // If the user was completing their profile for the first time, redirect to home
-      if (!userProfile.isProfileComplete) {
-        router.push('/');
+
+      if (onUpdate) {
+        onUpdate();
+      } else {
+        router.refresh();
+        // If the user was completing their profile for the first time, redirect to home
+        if (!userProfile.isProfileComplete) {
+          router.push('/');
+        }
       }
     } catch (error) {
        toast({
@@ -185,7 +191,7 @@ export function ProfileForm({ userProfile }: ProfileFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Update profile
         </Button>

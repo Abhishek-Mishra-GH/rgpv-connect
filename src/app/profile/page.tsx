@@ -4,10 +4,18 @@ import { ProfileForm } from "@/components/profile-form";
 import { ProfileFormSkeleton } from "@/components/profile-form-skeleton";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/components/auth-provider";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-  const { userProfile, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
+  const router = useRouter();
 
+  // If user is not logged in, redirect them. This page is not public.
+  if (!loading && !user) {
+    router.push('/login');
+    return <ProfileFormSkeleton />;
+  }
+  
   if (loading || !userProfile) {
     return <ProfileFormSkeleton />;
   }

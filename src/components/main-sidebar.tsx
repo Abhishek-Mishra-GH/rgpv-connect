@@ -7,11 +7,13 @@ import {
   PlusCircle,
   Users,
   User,
+  LogIn,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Logo } from './logo';
+import { useAuth } from './auth-provider';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Home' },
@@ -22,6 +24,7 @@ const navItems = [
 
 export function MainSidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
 
   return (
     <div className="hidden border-r bg-card md:block">
@@ -31,7 +34,11 @@ export function MainSidebar() {
         </div>
         <div className="flex-1">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-            {navItems.map((item) => (
+            {navItems.map((item) => {
+              if (!user && (item.href === '/profile' || item.href === '/ask-question')) {
+                return null;
+              }
+              return (
               <Link
                 key={item.href}
                 href={item.href}
@@ -45,21 +52,33 @@ export function MainSidebar() {
                 <item.icon className="h-4 w-4" />
                 {item.label}
               </Link>
-            ))}
+            )})}
           </nav>
         </div>
         <div className="mt-auto p-4">
           <Card>
             <CardHeader className="p-2 pt-0 md:p-4">
-              <CardTitle>Need Help?</CardTitle>
+              <CardTitle>{user ? 'Need Help?' : 'Get Involved'}</CardTitle>
               <CardDescription>
-                Stuck on a problem? Ask the community and get help from seniors.
+                {user 
+                    ? 'Stuck on a problem? Ask the community and get help from seniors.'
+                    : 'Sign up to ask questions, post answers, and connect with peers.'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-              <Button size="sm" className="w-full" asChild>
-                <Link href="/ask-question">Ask Now</Link>
-              </Button>
+                {user ? (
+                    <Button size="sm" className="w-full" asChild>
+                        <Link href="/ask-question">Ask Now</Link>
+                    </Button>
+                ) : (
+                    <Button size="sm" className="w-full" asChild>
+                        <Link href="/login">
+                            <LogIn className="mr-2 h-4 w-4" />
+                            Login to Participate
+                        </Link>
+                    </Button>
+                )}
             </CardContent>
           </Card>
         </div>

@@ -9,7 +9,8 @@ import {
   Users,
   PlusCircle,
   User,
-  LogOut
+  LogOut,
+  LogIn
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -98,7 +99,7 @@ export function Header() {
           </div>
         </form>
       </div>
-       {user && (
+       {user ? (
          <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
@@ -120,6 +121,13 @@ export function Header() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      ) : (
+        <Button asChild>
+            <Link href="/login">
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
+            </Link>
+        </Button>
       )}
     </header>
   );
