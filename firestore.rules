@@ -1,65 +1,37 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if a user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of the document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Rules for the 'users' collection
+    
+    // Users can read their own profile, and anyone can create one.
+    // Profiles can only be updated by the owner.
     match /users/{userId} {
-      // Any authenticated user can create their own profile
-      allow create: if isAuthenticated();
-      // Only the owner can read or update their own profile
-      allow read, update: if isOwner(userId);
+      allow read, get;
+      allow create: if request.auth != null;
+      allow update: if request.auth.uid == userId;
     }
 
-    // Rules for the 'questions' collection
+    // Questions can be read by anyone.
+    // They can be created by any authenticated user.
+    // Upvotes can be incremented/decremented by 1, and no other fields can be changed.
     match /questions/{questionId} {
-      // Anyone can read questions
-      allow read;
-      
-      // Only authenticated users can create questions
-      allow create: if isAuthenticated();
-
-      // Allow updates only for upvotes/downvotes by any authenticated user,
-      // or for content edits by the original author.
-      allow update: if isAuthenticated() && (
-        // Case 1: Any authenticated user can upvote or downvote
-        (
-          (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1) &&
-          request.resource.data.title == resource.data.title &&
-          request.resource.data.body == resource.data.body &&
-          request.resource.data.summary == resource.data.summary &&
-          request.resource.data.tags == resource.data.tags
-        )
-        // Case 2: Only the author can edit their own question content
-        || (isOwner(resource.data.author.id))
-      );
+      allow read, get, list;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+                    && (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes']);
     }
-
-    // Rules for the 'answers' collection
+    
+    // Answers can be read by anyone.
+    // They can be created by any authenticated user.
+    // Upvotes can be incremented/decremented by 1, and no other fields can be changed.
     match /answers/{answerId} {
-      // Anyone can read answers
-      allow read;
-
-      // Only authenticated users can create answers
-      allow create: if isAuthenticated();
-
-      // Allow updates only for upvotes/downvotes by any authenticated user.
-      allow update: if isAuthenticated() && (
-        (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1) &&
-        request.resource.data.body == resource.data.body &&
-        request.resource.data.questionId == resource.data.questionId &&
-        request.resource.data.author.id == resource.data.author.id
-      );
+      allow read, get, list;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+                    && (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes']);
     }
   }
 }
