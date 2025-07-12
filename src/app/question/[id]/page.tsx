@@ -35,61 +35,64 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
     const userAnswers = answers.filter(a => a.author.id !== 'ai-assistant');
 
     return (
-        <div className="max-w-4xl mx-auto">
-            <div className="flex flex-col gap-2">
-                <div className="flex gap-2 mb-2">
-                    {question.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-                </div>
-                <h1 className="text-2xl md:text-3xl font-bold font-headline">{question.title}</h1>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                    <Avatar className="h-6 w-6">
-                        <AvatarImage src={question.author.avatarUrl} alt={question.author.name} />
-                        <AvatarFallback>{question.author.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <span>
-                        Asked by <span className="font-medium text-foreground">{question.author.name}</span>
-                    </span>
-                    <span>&bull;</span>
-                    <span>{formatDistanceToNow(getDisplayDate(question.createdAt), { addSuffix: true })}</span>
-                </div>
-            </div>
+        <div className="max-w-4xl mx-auto space-y-8">
+            <Card>
+                <CardContent className="p-6">
+                    <h1 className="text-2xl md:text-3xl font-bold font-headline">{question.title}</h1>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2 mb-6">
+                        <Avatar className="h-6 w-6">
+                            <AvatarImage src={question.author.avatarUrl} alt={question.author.name} />
+                            <AvatarFallback>{question.author.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span>
+                            Asked by <span className="font-medium text-foreground">{question.author.name}</span>
+                        </span>
+                        <span>&bull;</span>
+                        <span>{formatDistanceToNow(getDisplayDate(question.createdAt), { addSuffix: true })}</span>
+                    </div>
 
-            <Separator className="my-6" />
+                    <Separator className="mb-6"/>
+                    
+                    <div className="flex flex-col md:flex-row gap-8">
+                        {/* Desktop vote buttons */}
+                        <div className="hidden md:flex flex-col items-center gap-1 text-muted-foreground w-12">
+                            <form action={handleQuestionUpvote}>
+                                <VoteButton type="up" />
+                            </form>
+                            <span className="text-xl font-bold text-foreground">{question.upvotes}</span>
+                            <form action={handleQuestionDownvote}>
+                                <VoteButton type="down" />
+                            </form>
+                        </div>
+                        <div className="prose dark:prose-invert max-w-none prose-p:text-foreground/90 flex-1">
+                            <p>{question.body}</p>
+                        </div>
+                    </div>
 
-            <div className="flex flex-col md:flex-row gap-8">
-                 {/* Desktop vote buttons */}
-                <div className="hidden md:flex flex-col items-center gap-1 text-muted-foreground w-12">
-                    <form action={handleQuestionUpvote}>
-                        <VoteButton type="up" />
-                    </form>
-                    <span className="text-xl font-bold text-foreground">{question.upvotes}</span>
-                    <form action={handleQuestionDownvote}>
-                        <VoteButton type="down" />
-                    </form>
-                </div>
-                <div className="prose dark:prose-invert max-w-none prose-p:text-foreground/90 flex-1">
-                    <p>{question.body}</p>
-                </div>
-            </div>
-            
-            {/* Mobile vote/answer count bar */}
-            <div className="md:hidden flex items-center justify-between mt-6 p-2 border-t border-b">
-                 <div className="flex items-center gap-2">
-                    <form action={handleQuestionUpvote}>
-                         <VoteButton type="up" voteCount={question.upvotes} />
-                    </form>
-                    <form action={handleQuestionDownvote}>
-                         <VoteButton type="down" />
-                    </form>
-                 </div>
-                 <div className="flex items-center gap-2 text-muted-foreground">
-                    <MessageSquare className="h-5 w-5" />
-                    <span className="font-medium">{answers.length} Answer{answers.length !== 1 && 's'}</span>
-                 </div>
-            </div>
+                    <div className="flex flex-wrap gap-2 mt-6">
+                        {question.tags.map(tag => <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>)}
+                    </div>
 
+                    {/* Mobile vote/answer count bar */}
+                    <div className="md:hidden flex items-center justify-between mt-6 pt-4 border-t">
+                        <div className="flex items-center gap-2">
+                            <form action={handleQuestionUpvote}>
+                                <VoteButton type="up" voteCount={question.upvotes} />
+                            </form>
+                            <form action={handleQuestionDownvote}>
+                                <VoteButton type="down" />
+                            </form>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <MessageSquare className="h-5 w-5" />
+                            <span className="font-medium">{answers.length} Answer{answers.length !== 1 && 's'}</span>
+                        </div>
+                    </div>
 
-            <Card className="mt-8">
+                </CardContent>
+            </Card>
+
+            <Card>
                 <CardHeader>
                     <h3 className="text-xl font-bold font-headline">Your Answer</h3>
                 </CardHeader>
@@ -98,7 +101,7 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                 </CardContent>
             </Card>
 
-            <h2 className="text-2xl font-bold font-headline mt-8 mb-4">{answers.length} Answer{answers.length !== 1 && 's'}</h2>
+            <h2 className="text-2xl font-bold font-headline">{answers.length} Answer{answers.length !== 1 && 's'}</h2>
             
             <div className="space-y-6">
                 {aiAnswer && (

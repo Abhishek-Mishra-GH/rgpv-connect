@@ -20,7 +20,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 const answerFormSchema = z.object({
   body: z.string().min(20, {
@@ -98,35 +97,27 @@ export function AnswerForm({ questionId }: { questionId: string }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="flex gap-4">
-             <Avatar>
-                <AvatarImage src={userProfile.avatarUrl} alt={userProfile.name} />
-                <AvatarFallback>{userProfile.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="w-full">
-                <FormField
-                    control={form.control}
-                    name="body"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormControl>
-                            <Textarea
-                            placeholder="Share your knowledge. Be clear and concise."
-                            className="min-h-[150px]"
-                            {...field}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <div className="flex justify-end mt-4">
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Post Your Answer
-                    </Button>
-                </div>
-            </div>
+        <FormField
+            control={form.control}
+            name="body"
+            render={({ field }) => (
+                <FormItem>
+                <FormControl>
+                    <Textarea
+                    placeholder="Share your knowledge. Be clear and concise."
+                    className="min-h-[150px]"
+                    {...field}
+                    />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+        />
+        <div className="flex justify-end">
+            <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Post Your Answer
+            </Button>
         </div>
       </form>
     </Form>
