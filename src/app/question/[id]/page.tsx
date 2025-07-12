@@ -5,11 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import type { Timestamp } from "firebase/firestore";
-import { Bot } from "lucide-react";
+import { Bot, ChevronDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { AnswerForm } from "@/components/answer-form";
 import { VoteButton } from "@/components/vote-button";
 import { upvoteQuestion, downvoteQuestion, upvoteAnswer, downvoteAnswer } from "@/lib/firestore-actions";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
 
 const getDisplayDate = (createdAt: Date | Timestamp): Date => {
     if (createdAt instanceof Date) {
@@ -28,6 +30,9 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
     const path = `/question/${params.id}`;
     const handleQuestionUpvote = upvoteQuestion.bind(null, params.id, path);
     const handleQuestionDownvote = downvoteQuestion.bind(null, params.id, path);
+
+    const aiAnswer = answers.find(a => a.author.id === 'ai-assistant');
+    const userAnswers = answers.filter(a => a.author.id !== 'ai-assistant');
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -64,11 +69,65 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                 </CardFooter>
             </Card>
 
+            <Card className="mt-6">
+                <CardHeader>
+                    <h3 className="text-xl font-bold font-headline">Your Answer</h3>
+                </CardHeader>
+                <CardContent>
+                    <AnswerForm questionId={params.id} />
+                </CardContent>
+            </Card>
+
             <h2 className="text-2xl font-bold font-headline mt-8 mb-4">{answers.length} Answer{answers.length !== 1 && 's'}</h2>
             
             <div className="space-y-6">
-                {answers.map(answer => (
-                    <Card key={answer.id} className={`bg-card ${answer.author.id === 'ai-assistant' ? 'border-primary/30' : ''}`}>
+                {aiAnswer && (
+                     <Card key={aiAnswer.id} className="bg-card border-primary/30">
+                        <CardContent className="p-0">
+                            <div className="flex gap-4 p-6">
+                                <div className="flex flex-col items-center gap-1 text-muted-foreground w-12">
+                                     <form action={upvoteAnswer.bind(null, aiAnswer.id, path)}>
+                                        <VoteButton type="up" />
+                                     </form>
+                                     <span className="text-base font-bold text-foreground">{aiAnswer.upvotes}</span>
+                                     <form action={downvoteAnswer.bind(null, aiAnswer.id, path)}>
+                                        <VoteButton type="down" />
+                                    </form>
+                                </div>
+                                <div className="flex-1">
+                                    <Collapsible>
+                                        <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 line-clamp-3">
+                                            <p>{aiAnswer.body}</p>
+                                        </div>
+                                        <CollapsibleContent className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 mt-4">
+                                             <p>{aiAnswer.body}</p>
+                                        </CollapsibleContent>
+                                        <CollapsibleTrigger asChild>
+                                             <Button variant="link" className="p-0 h-auto text-sm mt-2">
+                                                View full answer
+                                                <ChevronDown className="h-4 w-4 ml-1" />
+                                            </Button>
+                                        </CollapsibleTrigger>
+                                    </Collapsible>
+                                    <div className="flex items-center justify-end mt-4">
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Avatar className="h-8 w-8 bg-primary/20 text-primary">
+                                                <Bot className="h-5 w-5" />
+                                            </Avatar>
+                                            <div>
+                                                <span className="font-medium text-foreground">{aiAnswer.author.name}</span>
+                                                <p>Generated {formatDistanceToNow(getDisplayDate(aiAnswer.createdAt), { addSuffix: true })}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {userAnswers.map(answer => (
+                    <Card key={answer.id}>
                         <CardContent className="p-0">
                             <div className="flex gap-4 p-6">
                                 <div className="flex flex-col items-center gap-1 text-muted-foreground w-12">
@@ -86,28 +145,14 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                                     </div>
                                     <div className="flex items-center justify-end mt-4">
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            {answer.author.id === 'ai-assistant' ? (
-                                                <>
-                                                    <Avatar className="h-8 w-8 bg-primary/20 text-primary">
-                                                        <Bot className="h-5 w-5" />
-                                                    </Avatar>
-                                                    <div>
-                                                        <span className="font-medium text-foreground">{answer.author.name}</span>
-                                                        <p>Generated {formatDistanceToNow(getDisplayDate(answer.createdAt), { addSuffix: true })}</p>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Avatar className="h-8 w-8">
-                                                        <AvatarImage src={answer.author.avatarUrl} alt={answer.author.name} />
-                                                        <AvatarFallback>{answer.author.name.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <span className="font-medium text-foreground">{answer.author.name}</span>
-                                                        <p>Answered {formatDistanceToNow(getDisplayDate(answer.createdAt), { addSuffix: true })}</p>
-                                                    </div>
-                                                </>
-                                            )}
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={answer.author.avatarUrl} alt={answer.author.name} />
+                                                <AvatarFallback>{answer.author.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <span className="font-medium text-foreground">{answer.author.name}</span>
+                                                <p>Answered {formatDistanceToNow(getDisplayDate(answer.createdAt), { addSuffix: true })}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -116,17 +161,6 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                     </Card>
                 ))}
             </div>
-
-            <Separator className="my-8" />
-            
-            <Card>
-                <CardHeader>
-                    <h3 className="text-xl font-bold font-headline">Your Answer</h3>
-                </CardHeader>
-                <CardContent>
-                    <AnswerForm questionId={params.id} />
-                </CardContent>
-            </Card>
         </div>
     );
 }
