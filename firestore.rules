@@ -1,50 +1,65 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users:
-    // - Anyone can create their own user profile on signup.
-    // - Users can only read and update their own profile.
+    // Helper function to check if a user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the user is the owner of the document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Rules for the 'users' collection
     match /users/{userId} {
-      allow read: if true;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
+      // Any authenticated user can create their own profile
+      allow create: if isAuthenticated();
+      // Only the owner can read or update their own profile
+      allow read, update: if isOwner(userId);
     }
 
-    // Questions:
-    // - Anyone can read questions.
-    // - Authenticated users can create questions.
-    // - Only the author can update/delete their question, but anyone can vote.
+    // Rules for the 'questions' collection
     match /questions/{questionId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && (
-        // Case 1: The user is the author, they can edit anything
-        (resource.data.author.id == request.auth.uid) ||
-        // Case 2: Any logged-in user can upvote or downvote
-        (request.resource.data.upvotes == resource.data.upvotes + 1 ||
-         request.resource.data.upvotes == resource.data.upvotes - 1)
+      // Anyone can read questions
+      allow read;
+      
+      // Only authenticated users can create questions
+      allow create: if isAuthenticated();
+
+      // Allow updates only for upvotes/downvotes by any authenticated user,
+      // or for content edits by the original author.
+      allow update: if isAuthenticated() && (
+        // Case 1: Any authenticated user can upvote or downvote
+        (
+          (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1) &&
+          request.resource.data.title == resource.data.title &&
+          request.resource.data.body == resource.data.body &&
+          request.resource.data.summary == resource.data.summary &&
+          request.resource.data.tags == resource.data.tags
+        )
+        // Case 2: Only the author can edit their own question content
+        || (isOwner(resource.data.author.id))
       );
-      allow delete: if request.auth != null && resource.data.author.id == request.auth.uid;
     }
 
-    // Answers:
-    // - Answers can be read by anyone (as part of a question).
-    // - Authenticated users can create/post answers.
-    // - Only the author can update/delete their answer, but anyone can vote.
+    // Rules for the 'answers' collection
     match /answers/{answerId} {
-      allow read, list: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && (
-        // Case 1: The user is the author, they can edit anything
-        (resource.data.author.id == request.auth.uid) ||
-        // Case 2: Any logged-in user can upvote or downvote
-        (request.resource.data.upvotes == resource.data.upvotes + 1 ||
-         request.resource.data.upvotes == resource.data.upvotes - 1)
+      // Anyone can read answers
+      allow read;
+
+      // Only authenticated users can create answers
+      allow create: if isAuthenticated();
+
+      // Allow updates only for upvotes/downvotes by any authenticated user.
+      allow update: if isAuthenticated() && (
+        (request.resource.data.upvotes == resource.data.upvotes + 1 || request.resource.data.upvotes == resource.data.upvotes - 1) &&
+        request.resource.data.body == resource.data.body &&
+        request.resource.data.questionId == resource.data.questionId &&
+        request.resource.data.author.id == resource.data.author.id
       );
-      allow delete: if request.auth != null && resource.data.author.id == request.auth.uid;
     }
   }
 }
