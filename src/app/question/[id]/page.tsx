@@ -134,6 +134,15 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                             </div>
                         </CardHeader>
                         <CardContent className="p-6">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                                <Avatar className="h-6 w-6 bg-primary/20 text-primary">
+                                    <Bot className="h-4 w-4" />
+                                </Avatar>
+                                <div>
+                                    <span className="font-medium text-foreground">{aiAnswer.author.name}</span>
+                                    <span> &middot; Generated {formatDistanceToNow(getDisplayDate(aiAnswer.createdAt), { addSuffix: true })}</span>
+                                </div>
+                            </div>
                              <div className="flex-1 overflow-hidden">
                                 <Collapsible>
                                     <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 line-clamp-3">
@@ -149,25 +158,14 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                                         </Button>
                                     </CollapsibleTrigger>
                                 </Collapsible>
-                                <div className="flex items-center justify-between mt-4">
-                                    <div className="flex items-center gap-2">
-                                        <form action={upvoteAnswer.bind(null, aiAnswer.id, path)}>
-                                            <VoteButton type="up" />
-                                        </form>
-                                        <span className="text-base font-bold text-foreground">{aiAnswer.upvotes}</span>
-                                        <form action={downvoteAnswer.bind(null, aiAnswer.id, path)}>
-                                            <VoteButton type="down" />
-                                        </form>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <Avatar className="h-8 w-8 bg-primary/20 text-primary">
-                                            <Bot className="h-5 w-5" />
-                                        </Avatar>
-                                        <div>
-                                            <span className="font-medium text-foreground">{aiAnswer.author.name}</span>
-                                            <p>Generated {formatDistanceToNow(getDisplayDate(aiAnswer.createdAt), { addSuffix: true })}</p>
-                                        </div>
-                                    </div>
+                                <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                                    <form action={upvoteAnswer.bind(null, aiAnswer.id, path)}>
+                                        <VoteButton type="up" />
+                                    </form>
+                                    <span className="text-base font-bold text-foreground">{aiAnswer.upvotes}</span>
+                                    <form action={downvoteAnswer.bind(null, aiAnswer.id, path)}>
+                                        <VoteButton type="down" />
+                                    </form>
                                 </div>
                             </div>
                         </CardContent>
@@ -177,30 +175,28 @@ export default async function QuestionDetailPage({ params }: { params: { id: str
                 {userAnswers.map(answer => (
                     <Card key={answer.id}>
                          <CardContent className="p-6">
+                             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                                <Avatar className="h-6 w-6">
+                                    <AvatarImage src={answer.author.avatarUrl} alt={answer.author.name} />
+                                    <AvatarFallback>{answer.author.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <span className="font-medium text-foreground">{answer.author.name}</span>
+                                    <span> &middot; Answered {formatDistanceToNow(getDisplayDate(answer.createdAt), { addSuffix: true })}</span>
+                                </div>
+                            </div>
                             <div className="flex-1">
                                 <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90">
                                     <p>{answer.body}</p>
                                 </div>
-                                <div className="flex items-center justify-between mt-4">
-                                    <div className="flex items-center gap-2">
-                                        <form action={upvoteAnswer.bind(null, answer.id, path)}>
-                                            <VoteButton type="up" />
-                                        </form>
-                                        <span className="text-base font-bold text-foreground">{answer.upvotes}</span>
-                                        <form action={downvoteAnswer.bind(null, answer.id, path)}>
-                                            <VoteButton type="down" />
-                                        </form>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarImage src={answer.author.avatarUrl} alt={answer.author.name} />
-                                            <AvatarFallback>{answer.author.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <span className="font-medium text-foreground">{answer.author.name}</span>
-                                            <p>Answered {formatDistanceToNow(getDisplayDate(answer.createdAt), { addSuffix: true })}</p>
-                                        </div>
-                                    </div>
+                                <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                                    <form action={upvoteAnswer.bind(null, answer.id, path)}>
+                                        <VoteButton type="up" />
+                                    </form>
+                                    <span className="text-base font-bold text-foreground">{answer.upvotes}</span>
+                                    <form action={downvoteAnswer.bind(null, answer.id, path)}>
+                                        <VoteButton type="down" />
+                                    </form>
                                 </div>
                             </div>
                         </CardContent>
