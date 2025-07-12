@@ -7,8 +7,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { summarizeQuestion } from "@/ai/flows/summarize-question";
 import { answerQuestion } from "@/ai/flows/answer-question";
-import { addDoc, collection, serverTimestamp, writeBatch, doc, increment } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { createQuestionWithAIAnswer } from "@/lib/firestore-actions";
 import { useAuth } from "./auth-provider";
 
 import { Button } from "@/components/ui/button";
@@ -27,11 +26,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Wand2, Loader2, Bot } from "lucide-react";
 
 const askQuestionFormSchema = z.object({
-  title: z.string().min(15, {
-    message: "Title must be at least 15 characters.",
-  }).max(150, {
-    message: "Title must not be longer than 150 characters.",
-  }),
+  title: z
+    .string()
+    .min(15, {
+      message: "Title must be at least 15 characters.",
+    })
+    .max(150, {
+      message: "Title must not be longer than 150 characters.",
+    }),
   body: z.string().min(30, {
     message: "Question body must be at least 30 characters.",
   }),
@@ -54,11 +56,11 @@ export function AskQuestionForm() {
     resolver: zodResolver(askQuestionFormSchema),
     mode: "onChange",
     defaultValues: {
-        title: "",
-        body: "",
-        summary: "",
-        tags: "",
-    }
+      title: "",
+      body: "",
+      summary: "",
+      tags: "",
+    },
   });
 
   const handleSummarize = async () => {
@@ -66,12 +68,13 @@ export function AskQuestionForm() {
     if (!questionBody || questionBody.length < 50) {
       toast({
         title: "Content too short",
-        description: "Please write a more detailed question body (at least 50 characters) to generate a summary.",
+        description:
+          "Please write a more detailed question body (at least 50 characters) to generate a summary.",
         variant: "destructive",
       });
       return;
     }
-    
+
     setIsSummarizing(true);
     try {
       const result = await summarizeQuestion({ question: questionBody });
@@ -94,57 +97,46 @@ export function AskQuestionForm() {
 
   async function onSubmit(data: AskQuestionFormValues) {
     if (!user || !userProfile) {
-      toast({ title: "Please log in to post a question.", variant: "destructive" });
+      toast({
+        title: "Please log in to post a question.",
+        variant: "destructive",
+      });
       return;
     }
     setIsSubmitting(true);
     try {
       // Generate AI answer first
-      const aiResponse = await answerQuestion({ title: data.title, body: data.body });
-
-      const batch = writeBatch(db);
-
-      // 1. Create the question document
-      const questionRef = doc(collection(db, "questions"));
-      batch.set(questionRef, {
+      const aiResponse = await answerQuestion({
         title: data.title,
         body: data.body,
-        summary: data.summary || data.body.substring(0, 150),
-        tags: data.tags.split(',').map(tag => tag.trim()),
-        author: {
-          id: user.uid,
-          name: userProfile.name,
-          avatarUrl: userProfile.avatarUrl,
+      });
+
+      // Create question with AI answer using server action
+      const result = await createQuestionWithAIAnswer(
+        {
+          title: data.title,
+          body: data.body,
+          summary: data.summary || data.body.substring(0, 150),
+          tags: data.tags.split(",").map((tag) => tag.trim()),
+          authorId: user.uid,
+          authorName: userProfile.name,
+          authorAvatarUrl: userProfile.avatarUrl,
         },
-        createdAt: serverTimestamp(),
-        answerCount: 1, // Start with the AI answer
-        upvotes: 0,
-      });
-      
-      // 2. Create the AI answer document
-      const answerRef = doc(collection(db, "answers"));
-      batch.set(answerRef, {
-          questionId: questionRef.id,
-          body: aiResponse.answer,
-          author: {
-              id: 'ai-assistant',
-              name: 'AI Assistant',
-              avatarUrl: '',
-          },
-          createdAt: serverTimestamp(),
-          upvotes: 0,
-      });
+        aiResponse.answer
+      );
 
-      await batch.commit();
-
-      toast({
-        title: "Question Posted!",
-        description: "Your question is live and has an initial AI-generated answer.",
-      });
-      form.reset({ title: '', body: '', tags: '', summary: '' });
-      router.push(`/question/${questionRef.id}`);
-      router.refresh();
-
+      if (result.success && result.questionId) {
+        toast({
+          title: "Question Posted!",
+          description:
+            "Your question is live and has an initial AI-generated answer.",
+        });
+        form.reset({ title: "", body: "", tags: "", summary: "" });
+        router.push(`/question/${result.questionId}`);
+        router.refresh();
+      } else {
+        throw new Error(result.error || "Failed to create question");
+      }
     } catch (error) {
       console.error("Failed to post question:", error);
       toast({
@@ -167,10 +159,14 @@ export function AskQuestionForm() {
             <FormItem>
               <FormLabel>Title</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., How to prepare for Data Structures exam?" {...field} />
+                <Input
+                  placeholder="e.g., How to prepare for Data Structures exam?"
+                  {...field}
+                />
               </FormControl>
               <FormDescription>
-                Be specific and imagine you’re asking a question to another person.
+                Be specific and imagine you’re asking a question to another
+                person.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -208,7 +204,7 @@ export function AskQuestionForm() {
                   disabled={isSummarizing || isSubmitting}
                 >
                   {isSummarizing ? (
-                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <Wand2 className="mr-2 h-4 w-4" />
                   )}
@@ -223,7 +219,8 @@ export function AskQuestionForm() {
                 />
               </FormControl>
               <FormDescription>
-                This summary helps others quickly understand your question. You can edit it after generation.
+                This summary helps others quickly understand your question. You
+                can edit it after generation.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -236,17 +233,21 @@ export function AskQuestionForm() {
             <FormItem>
               <FormLabel>Tags</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., cse, 5th-sem, data-structures" {...field} />
+                <Input
+                  placeholder="e.g., cse, 5th-sem, data-structures"
+                  {...field}
+                />
               </FormControl>
               <FormDescription>
-                Add up to 5 tags to describe what your question is about. Use commas to separate tags.
+                Add up to 5 tags to describe what your question is about. Use
+                commas to separate tags.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" disabled={isSubmitting || !user}>
-           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Post Your Question
         </Button>
       </form>

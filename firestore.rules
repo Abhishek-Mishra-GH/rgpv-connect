@@ -51,5 +51,21 @@ service cloud.firestore {
                      (request.resource.data.upvotes == resource.data.upvotes + 1 ||
                       request.resource.data.upvotes == resource.data.upvotes - 1);
     }
+
+    // QUESTION VOTES
+    match /questionVotes/{voteId} {
+      allow read: if isAuthenticated();
+      // Users can create/update their own votes
+      allow write: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid;
+    }
+
+    // ANSWER VOTES  
+    match /answerVotes/{voteId} {
+      allow read: if isAuthenticated();
+      // Users can create/update their own votes
+      allow write: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid;
+    }
   }
 }
