@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CircleUser, Search, LogOut, LogIn, Loader2 } from "lucide-react";
+import { CircleUser, LogOut, LogIn, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,12 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./auth-provider";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "./logo";
 
 export function Header() {
   const { user } = useAuth();
@@ -45,20 +45,33 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
-      <div className="w-full flex-1">
-        <form>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search questions..."
-              className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
-            />
-          </div>
-        </form>
+    <header className="flex h-14 items-center md:justify-end justify-between border-b bg-card px-4 lg:h-[60px] lg:px-6">
+      {/* Logo and Brand Name */}
+      <div className="flex items-center gap-2 md:hidden">
+        <Logo />
       </div>
-      <div className="hidden md:flex items-center">
+
+      {/* Desktop Navigation and User Menu */}
+      <div className="flex items-center gap-6">
+        {user && (
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+            <Link
+              href="/"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => handleNavClick("/")}
+            >
+              Home
+            </Link>
+            <Link
+              href="/ask-question"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => handleNavClick("/ask-question")}
+            >
+              Ask Question
+            </Link>
+          </nav>
+        )}
+
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -94,7 +107,7 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button asChild>
+          <Button asChild size="sm">
             <Link href="/login" onClick={() => handleNavClick("/login")}>
               {loadingPath === "/login" ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

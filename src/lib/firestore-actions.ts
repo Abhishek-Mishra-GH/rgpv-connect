@@ -34,11 +34,64 @@ export async function getQuestions(
         constraints = [orderBy("upvotes", "desc")];
         break;
       case "unanswered":
-        constraints = [
+        // Get questions that have 0 or 1 answers (no human answers)
+        // We'll do two separate queries and combine them
+        const noAnswersQuery = query(
+          questionsCol,
           where("answerCount", "==", 0),
           orderBy("createdAt", "desc"),
+          limit(10)
+        );
+        const aiOnlyQuery = query(
+          questionsCol,
+          where("answerCount", "==", 1),
+          orderBy("createdAt", "desc"),
+          limit(10)
+        );
+
+        const [noAnswersSnapshot, aiOnlySnapshot] = await Promise.all([
+          getDocs(noAnswersQuery),
+          getDocs(aiOnlyQuery),
+        ]);
+
+        const questions = [
+          ...noAnswersSnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              createdAt: data.createdAt?.toDate
+                ? data.createdAt.toDate()
+                : new Date(),
+            } as Question;
+          }),
+          ...aiOnlySnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              createdAt: data.createdAt?.toDate
+                ? data.createdAt.toDate()
+                : new Date(),
+            } as Question;
+          }),
         ];
-        break;
+
+        // Sort by creation date and limit to 20
+        return questions
+          .sort((a, b) => {
+            const aTime =
+              a.createdAt instanceof Date
+                ? a.createdAt.getTime()
+                : a.createdAt.toDate().getTime();
+            const bTime =
+              b.createdAt instanceof Date
+                ? b.createdAt.getTime()
+                : b.createdAt.toDate().getTime();
+            return bTime - aTime;
+          })
+          .slice(0, 20);
+
       case "latest":
       default:
         constraints = [orderBy("createdAt", "desc")];

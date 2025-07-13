@@ -10,6 +10,7 @@ type VoteButtonProps = {
   type: "up" | "down";
   isActive?: boolean;
   isLoading?: boolean;
+  size?: "sm" | "md";
 };
 
 export function VoteButton({
@@ -17,11 +18,14 @@ export function VoteButton({
   type,
   isActive = false,
   isLoading = false,
+  size = "sm",
 }: VoteButtonProps) {
   const { pending } = useFormStatus();
   const isDisabled = pending || isLoading;
 
   const Icon = type === "up" ? ArrowUp : ArrowDown;
+  const iconSize = size === "sm" ? "h-3 w-3" : "h-4 w-4";
+  const buttonSize = size === "sm" ? "h-6 w-6" : "h-7 w-7";
 
   if (voteCount !== undefined) {
     return (
@@ -49,11 +53,11 @@ export function VoteButton({
           )}
         >
           {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className={cn(iconSize, "animate-spin")} />
           ) : (
             <Icon
               className={cn(
-                "h-4 w-4",
+                iconSize,
                 isActive && "text-white",
                 !isActive && type === "up" && "text-green-500",
                 !isActive && type === "down" && "text-red-500"
@@ -74,7 +78,8 @@ export function VoteButton({
       aria-disabled={isDisabled}
       disabled={isDisabled}
       className={cn(
-        "h-7 w-7 data-[disabled]:opacity-70 transition-all duration-200",
+        buttonSize,
+        "data-[disabled]:opacity-70 transition-all duration-200",
         isActive &&
           type === "up" &&
           "bg-green-500 hover:bg-green-600 text-white",
@@ -88,9 +93,9 @@ export function VoteButton({
       )}
     >
       {isLoading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className={cn(iconSize, "animate-spin")} />
       ) : (
-        <Icon className="h-5 w-5" />
+        <Icon className={iconSize} />
       )}
     </Button>
   );

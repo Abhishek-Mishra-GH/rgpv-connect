@@ -50,7 +50,7 @@ export function HomePageClient() {
       case "popular":
         return "Check out the most discussed questions in the community.";
       case "unanswered":
-        return "Be the first to help out! These questions are waiting for an answer.";
+        return "Help the community! These questions only have AI answers and need human responses.";
       default:
         return "";
     }

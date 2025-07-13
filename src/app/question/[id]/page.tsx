@@ -91,6 +91,7 @@ export default async function QuestionDetailPage({
               <QuestionVoting
                 questionId={params.id}
                 upvoteCount={question.upvotes}
+                layout="vertical"
               />
             </div>
             <div className="prose dark:prose-invert max-w-none prose-p:text-foreground/90 flex-1">
@@ -108,12 +109,11 @@ export default async function QuestionDetailPage({
 
           {/* Mobile vote/answer count bar */}
           <div className="md:hidden flex items-center justify-between mt-6 pt-4 border-t">
-            <div className="flex items-center gap-2">
-              <QuestionVoting
-                questionId={params.id}
-                upvoteCount={question.upvotes}
-              />
-            </div>
+            <QuestionVoting
+              questionId={params.id}
+              upvoteCount={question.upvotes}
+              layout="horizontal"
+            />
             <div className="flex items-center gap-2 text-muted-foreground">
               <MessageSquare className="h-5 w-5" />
               <span className="font-medium">
@@ -148,12 +148,12 @@ export default async function QuestionDetailPage({
                 </span>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                 <Avatar className="h-6 w-6 bg-primary/20 text-primary">
                   <Bot className="h-4 w-4" />
                 </Avatar>
-                <div>
+                <div className="min-w-0 flex-1">
                   <span className="font-medium text-foreground">
                     {aiAnswer.author.name}
                   </span>
@@ -166,12 +166,22 @@ export default async function QuestionDetailPage({
                   </span>
                 </div>
               </div>
+
+              {/* Mobile voting buttons - below author info */}
+              <div className="sm:hidden mb-4 pb-4 border-b border-border/50">
+                <AnswerVoting
+                  answerId={aiAnswer.id}
+                  upvoteCount={aiAnswer.upvotes}
+                  layout="horizontal"
+                />
+              </div>
+
               <div className="flex-1 overflow-hidden">
                 <Collapsible>
-                  <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 line-clamp-3">
+                  <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 line-clamp-3 break-words">
                     <p>{aiAnswer.body}</p>
                   </div>
-                  <CollapsibleContent className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 mt-4">
+                  <CollapsibleContent className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 mt-4 break-words">
                     <p>{aiAnswer.body}</p>
                   </CollapsibleContent>
                   <CollapsibleTrigger asChild>
@@ -181,10 +191,13 @@ export default async function QuestionDetailPage({
                     </Button>
                   </CollapsibleTrigger>
                 </Collapsible>
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+
+                {/* Desktop voting buttons - below content */}
+                <div className="hidden sm:flex items-center gap-2 mt-4 pt-4 border-t">
                   <AnswerVoting
                     answerId={aiAnswer.id}
                     upvoteCount={aiAnswer.upvotes}
+                    layout="horizontal"
                   />
                 </div>
               </div>
@@ -194,7 +207,7 @@ export default async function QuestionDetailPage({
 
         {userAnswers.map((answer) => (
           <Card key={answer.id}>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                 <Avatar className="h-6 w-6">
                   <AvatarImage
@@ -205,7 +218,7 @@ export default async function QuestionDetailPage({
                     {answer.author.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <div>
+                <div className="min-w-0 flex-1">
                   <span className="font-medium text-foreground">
                     {answer.author.name}
                   </span>
@@ -218,14 +231,27 @@ export default async function QuestionDetailPage({
                   </span>
                 </div>
               </div>
+
+              {/* Mobile voting buttons - below author info */}
+              <div className="sm:hidden mb-4 pb-4 border-b border-border/50">
+                <AnswerVoting
+                  answerId={answer.id}
+                  upvoteCount={answer.upvotes}
+                  layout="horizontal"
+                />
+              </div>
+
               <div className="flex-1">
-                <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90">
+                <div className="prose dark:prose-invert max-w-none text-card-foreground prose-p:text-card-foreground/90 break-words">
                   <p>{answer.body}</p>
                 </div>
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+
+                {/* Desktop voting buttons - below content */}
+                <div className="hidden sm:flex items-center gap-2 mt-4 pt-4 border-t">
                   <AnswerVoting
                     answerId={answer.id}
                     upvoteCount={answer.upvotes}
+                    layout="horizontal"
                   />
                 </div>
               </div>

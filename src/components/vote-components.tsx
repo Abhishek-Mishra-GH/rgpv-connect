@@ -23,15 +23,20 @@ interface QuestionVotingProps {
 
 export function QuestionVoting({
   questionId,
-  upvoteCount,
+  upvoteCount = 0,
   downvoteCount,
-  layout = "vertical",
+  layout = "horizontal",
 }: QuestionVotingProps) {
   const { user } = useAuth();
   const pathname = usePathname();
   const { toast } = useToast();
   const [currentVote, setCurrentVote] = useState<"up" | "down" | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [optimisticUpvoteCount, setOptimisticUpvoteCount] =
+    useState(upvoteCount);
+
+  useEffect(() => {
+    setOptimisticUpvoteCount(upvoteCount);
+  }, [upvoteCount]);
 
   useEffect(() => {
     if (user?.uid) {
@@ -41,7 +46,7 @@ export function QuestionVoting({
     }
   }, [questionId, user?.uid]);
 
-  const handleVote = async (voteType: "up" | "down") => {
+  const handleVote = (voteType: "up" | "down") => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -51,59 +56,91 @@ export function QuestionVoting({
       return;
     }
 
-    // Store the previous vote for rollback in case of error
+    // Store the previous states for rollback in case of error
     const previousVote = currentVote;
-    setIsLoading(true);
+    const previousUpvoteCount = optimisticUpvoteCount;
 
-    try {
-      if (voteType === "up") {
-        // Optimistically update the UI first
-        if (currentVote === "up") {
-          setCurrentVote(null); // Remove upvote
-        } else {
-          setCurrentVote("up"); // Add upvote (or switch from downvote)
-        }
-        await upvoteQuestion(questionId, user.uid, pathname);
+    // Update UI INSTANTLY - no waiting
+    if (voteType === "up") {
+      if (currentVote === "up") {
+        setCurrentVote(null);
+        setOptimisticUpvoteCount((prev) => prev - 1);
       } else {
-        // Optimistically update the UI first
+        setCurrentVote("up");
         if (currentVote === "down") {
-          setCurrentVote(null); // Remove downvote
+          setOptimisticUpvoteCount((prev) => prev + 2); // +1 to remove downvote, +1 to add upvote
         } else {
-          setCurrentVote("down"); // Add downvote (or switch from upvote)
+          setOptimisticUpvoteCount((prev) => prev + 1);
         }
-        await downvoteQuestion(questionId, user.uid, pathname);
       }
-    } catch (error) {
-      console.error("Error voting:", error);
-      // Rollback optimistic update on error
-      setCurrentVote(previousVote);
-      toast({
-        title: "Error",
-        description: "Failed to register your vote. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    } else {
+      if (currentVote === "down") {
+        setCurrentVote(null);
+        setOptimisticUpvoteCount((prev) => prev + 1); // Remove downvote effect
+      } else {
+        setCurrentVote("down");
+        if (currentVote === "up") {
+          setOptimisticUpvoteCount((prev) => prev - 2); // -1 to remove upvote, -1 to add downvote
+        } else {
+          setOptimisticUpvoteCount((prev) => prev - 1); // Just add downvote effect
+        }
+      }
     }
+
+    // Execute database operation in background (non-blocking)
+    const performDatabaseUpdate = async () => {
+      try {
+        if (voteType === "up") {
+          await upvoteQuestion(questionId, user.uid, pathname);
+        } else {
+          await downvoteQuestion(questionId, user.uid, pathname);
+        }
+      } catch (error) {
+        console.error("Error voting:", error);
+        // Rollback optimistic update on error
+        setCurrentVote(previousVote);
+        setOptimisticUpvoteCount(previousUpvoteCount);
+        toast({
+          title: "Error",
+          description: "Failed to register your vote. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    // Start background update without blocking UI
+    performDatabaseUpdate();
   };
 
+  const isVertical = layout === "vertical";
+
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div
+      className={`flex ${
+        isVertical ? "flex-col" : "flex-row"
+      } items-center gap-2`}
+    >
       <form action={() => handleVote("up")}>
         <VoteButton
           type="up"
           isActive={currentVote === "up"}
-          isLoading={isLoading}
+          isLoading={false}
         />
       </form>
-      {upvoteCount !== undefined && (
-        <span className="text-xl font-bold text-foreground">{upvoteCount}</span>
-      )}
+
+      <span
+        className={`${
+          isVertical ? "text-lg" : "text-sm"
+        } font-bold text-foreground min-w-[1.5rem] text-center`}
+      >
+        {optimisticUpvoteCount}
+      </span>
+
       <form action={() => handleVote("down")}>
         <VoteButton
           type="down"
           isActive={currentVote === "down"}
-          isLoading={isLoading}
+          isLoading={false}
         />
       </form>
     </div>
@@ -114,18 +151,25 @@ interface AnswerVotingProps {
   answerId: string;
   upvoteCount?: number;
   downvoteCount?: number;
+  layout?: "vertical" | "horizontal";
 }
 
 export function AnswerVoting({
   answerId,
-  upvoteCount,
+  upvoteCount = 0,
   downvoteCount,
+  layout = "horizontal",
 }: AnswerVotingProps) {
   const { user } = useAuth();
   const pathname = usePathname();
   const { toast } = useToast();
   const [currentVote, setCurrentVote] = useState<"up" | "down" | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [optimisticUpvoteCount, setOptimisticUpvoteCount] =
+    useState(upvoteCount);
+
+  useEffect(() => {
+    setOptimisticUpvoteCount(upvoteCount);
+  }, [upvoteCount]);
 
   useEffect(() => {
     if (user?.uid) {
@@ -135,7 +179,7 @@ export function AnswerVoting({
     }
   }, [answerId, user?.uid]);
 
-  const handleVote = async (voteType: "up" | "down") => {
+  const handleVote = (voteType: "up" | "down") => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -145,59 +189,91 @@ export function AnswerVoting({
       return;
     }
 
-    // Store the previous vote for rollback in case of error
+    // Store the previous states for rollback in case of error
     const previousVote = currentVote;
-    setIsLoading(true);
+    const previousUpvoteCount = optimisticUpvoteCount;
 
-    try {
-      if (voteType === "up") {
-        // Optimistically update the UI first
-        if (currentVote === "up") {
-          setCurrentVote(null); // Remove upvote
-        } else {
-          setCurrentVote("up"); // Add upvote (or switch from downvote)
-        }
-        await upvoteAnswer(answerId, user.uid, pathname);
+    // Update UI INSTANTLY - no waiting
+    if (voteType === "up") {
+      if (currentVote === "up") {
+        setCurrentVote(null);
+        setOptimisticUpvoteCount((prev) => prev - 1);
       } else {
-        // Optimistically update the UI first
+        setCurrentVote("up");
         if (currentVote === "down") {
-          setCurrentVote(null); // Remove downvote
+          setOptimisticUpvoteCount((prev) => prev + 2); // +1 to remove downvote, +1 to add upvote
         } else {
-          setCurrentVote("down"); // Add downvote (or switch from upvote)
+          setOptimisticUpvoteCount((prev) => prev + 1);
         }
-        await downvoteAnswer(answerId, user.uid, pathname);
       }
-    } catch (error) {
-      console.error("Error voting:", error);
-      // Rollback optimistic update on error
-      setCurrentVote(previousVote);
-      toast({
-        title: "Error",
-        description: "Failed to register your vote. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    } else {
+      if (currentVote === "down") {
+        setCurrentVote(null);
+        setOptimisticUpvoteCount((prev) => prev + 1); // Remove downvote effect
+      } else {
+        setCurrentVote("down");
+        if (currentVote === "up") {
+          setOptimisticUpvoteCount((prev) => prev - 2); // -1 to remove upvote, -1 to add downvote
+        } else {
+          setOptimisticUpvoteCount((prev) => prev - 1); // Just add downvote effect
+        }
+      }
     }
+
+    // Execute database operation in background (non-blocking)
+    const performDatabaseUpdate = async () => {
+      try {
+        if (voteType === "up") {
+          await upvoteAnswer(answerId, user.uid, pathname);
+        } else {
+          await downvoteAnswer(answerId, user.uid, pathname);
+        }
+      } catch (error) {
+        console.error("Error voting:", error);
+        // Rollback optimistic update on error
+        setCurrentVote(previousVote);
+        setOptimisticUpvoteCount(previousUpvoteCount);
+        toast({
+          title: "Error",
+          description: "Failed to register your vote. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    // Start background update without blocking UI
+    performDatabaseUpdate();
   };
 
+  const isVertical = layout === "vertical";
+
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div
+      className={`flex ${
+        isVertical ? "flex-col" : "flex-row"
+      } items-center gap-2`}
+    >
       <form action={() => handleVote("up")}>
         <VoteButton
           type="up"
           isActive={currentVote === "up"}
-          isLoading={isLoading}
+          isLoading={false}
         />
       </form>
-      {upvoteCount !== undefined && (
-        <span className="text-xl font-bold text-foreground">{upvoteCount}</span>
-      )}
+
+      <span
+        className={`${
+          isVertical ? "text-lg" : "text-sm"
+        } font-bold text-foreground min-w-[1.5rem] text-center`}
+      >
+        {optimisticUpvoteCount}
+      </span>
+
       <form action={() => handleVote("down")}>
         <VoteButton
           type="down"
           isActive={currentVote === "down"}
-          isLoading={isLoading}
+          isLoading={false}
         />
       </form>
     </div>
